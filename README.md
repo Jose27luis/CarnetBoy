@@ -487,6 +487,17 @@ flowchart TD
 
 Las fichas describen paso a paso los casos más importantes. Los que no tienen ficha son consultas o mantenimientos simples.
 
+Cada ficha trae su diagrama de actividad. Los colores indican quién hace cada paso:
+
+| Color | Significado |
+|---|---|
+| Azul | Digitador |
+| Verde | Apoderado |
+| Naranja | Admin |
+| Violeta | Sistema |
+| Amarillo | Decisión |
+| Rojo | Flujo alternativo o excepción (el código, como `2a`, remite al texto) |
+
 #### CU-12 Vincular apoderado
 
 | | |
@@ -495,6 +506,40 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Objetivo** | Que un apoderado pueda ver el carnet digital de un niño. |
 | **Precondiciones** | El digitador inició sesión y el niño está registrado. El apoderado está presente con su DNI. |
 | **Disparador** | El apoderado pide acceso al carnet digital durante una atención. |
+
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Abre la ficha del niño<br/>y elige Vincular apoderado"]:::dig
+    A --> B["Ingresa el DNI del apoderado"]:::dig
+    B --> C{"¿El apoderado<br/>ya existe?"}:::dec
+    C -->|"No"| D["Completa nombres, apellidos,<br/>celular y correo"]:::dig
+    C -->|"Sí"| E{"¿Ya está vinculado<br/>a este niño?"}:::dec
+    E -->|"Sí (2b)"| X1["Avisa que el vínculo ya existe<br/>y no lo duplica"]:::alt
+    E -->|"No"| G["Elige el parentesco"]:::dig
+    D --> G
+    G --> H["Lee el consentimiento<br/>al apoderado"]:::dig
+    H --> J{"¿Acepta?"}:::dec
+    J -->|"No (4a)"| X2["No se crea el vínculo"]:::alt
+    J -->|"Sí"| K["Crea el vínculo y<br/>registra la auditoría"]:::sis
+    K --> L{"¿Tiene cuenta activa<br/>por otro hijo?"}:::dec
+    L -->|"Sí (2a)"| M["Vínculo ACTIVO: el niño aparece<br/>de inmediato en su app"]:::usr
+    L -->|"No"| N["Vínculo PENDIENTE y código de<br/>8 caracteres que vence en 7 días"]:::sis
+    N --> O["Entrega el código impreso<br/>y por correo"]:::dig
+    M --> F((Fin)):::ini
+    O --> F
+    X1 --> F
+    X2 --> F
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
 
 **Flujo principal**
 1. El digitador abre la ficha del niño y elige "Vincular apoderado".
@@ -523,6 +568,33 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Objetivo** | Crear su cuenta y ver por primera vez el carnet de su hijo. |
 | **Precondiciones** | Tiene un código vigente entregado por el digitador. |
 
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Abre la web en su celular<br/>y elige Tengo un código"]:::usr
+    A --> B["Ingresa su DNI y el código"]:::usr
+    B --> C{"¿Código del DNI,<br/>vigente y sin usar?"}:::dec
+    C -->|"No"| E{"¿Quinto intento<br/>fallido seguido?"}:::dec
+    E -->|"No (3a)"| X1["Indica pedir un código nuevo<br/>en el establecimiento (CU-13)"]:::alt
+    E -->|"Sí (3b)"| X2["Bloquea el DNI<br/>durante 15 minutos"]:::alt
+    C -->|"Sí"| D["Crea su contraseña y confirma<br/>su correo o celular"]:::usr
+    D --> G["Marca el código como usado<br/>y activa cuenta y vínculo"]:::sis
+    G --> H["Ofrece instalar la app<br/>y activar los avisos"]:::sis
+    H --> J["Muestra el inicio con la tarjeta<br/>del niño y la bienvenida"]:::usr
+    J --> F((Fin)):::ini
+    X1 --> F
+    X2 --> F
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
+
 **Flujo principal**
 1. El apoderado abre la web en su celular y elige "Tengo un código".
 2. Ingresa su DNI y el código.
@@ -544,6 +616,38 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Actor** | Digitador |
 | **Objetivo** | Dejar constancia de una dosis aplicada. |
 | **Precondiciones** | Sesión iniciada en un establecimiento; niño registrado. |
+
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Abre la ficha del niño"]:::dig
+    A --> B["Muestra las dosis pendientes según<br/>la edad y el esquema vigente"]:::sis
+    B --> C["Elige la dosis aplicada"]:::dig
+    C --> D["Ingresa fecha y lote<br/>(el lote se autocompleta)"]:::dig
+    D --> E{"¿La dosis ya<br/>está registrada?"}:::dec
+    E -->|"Sí (4b)"| X1["Lo impide y ofrece<br/>corregirla (CU-19)"]:::alt
+    E -->|"No"| G{"¿Fecha válida? No futura<br/>ni anterior al nacimiento"}:::dec
+    G -->|"No"| X2["Pide corregir la fecha"]:::alt
+    X2 --> D
+    G -->|"Sí"| H{"¿Edad dentro del<br/>rango de la dosis?"}:::dec
+    H -->|"No (4a)"| J["Advierte y pide un motivo,<br/>por ejemplo vacunación tardía"]:::alt
+    J --> K["Confirma con motivo"]:::dig
+    H -->|"Sí"| L["Confirma"]:::dig
+    K --> M["Guarda la dosis, registra la<br/>auditoría y propone la próxima cita"]:::sis
+    L --> M
+    M --> N["La familia recibe el aviso y ve<br/>el nuevo sello en su app"]:::usr
+    N --> F((Fin)):::ini
+    X1 --> F
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
 
 **Flujo principal**
 1. El digitador abre la ficha del niño; el sistema muestra las dosis pendientes según su edad y el esquema vigente.
@@ -567,6 +671,35 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Objetivo** | Registrar las medidas del niño y su clasificación nutricional. |
 | **Precondiciones** | Sesión iniciada en un establecimiento; niño registrado. |
 
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Ingresa fecha, peso, talla o longitud,<br/>posición y perímetro cefálico"]:::dig
+    A --> B{"¿Prematuro y menor<br/>de 24 meses?"}:::dec
+    B -->|"Sí"| C["Usa la edad corregida"]:::sis
+    B -->|"No"| D["Usa la edad cronológica"]:::sis
+    C --> E["Calcula los puntajes Z con las<br/>tablas de la OMS y la clasificación"]:::sis
+    D --> E
+    E --> G{"¿El peso cambia más del 30 %<br/>o un valor sale de rango?"}:::dec
+    G -->|"Sí (3a)"| H["Pide revisar las medidas"]:::alt
+    H -->|"Corrige"| A
+    H -->|"Confirma que son correctas"| K["Confirma"]:::dig
+    G -->|"No"| K
+    K --> L["Guarda el control con los puntajes Z<br/>y la versión de la tabla"]:::sis
+    L --> M["Programa la próxima cita"]:::dig
+    M --> N["Se actualiza la curva en<br/>la app del apoderado"]:::usr
+    N --> F((Fin)):::ini
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
+
 **Flujo principal**
 1. El digitador ingresa fecha, peso, talla o longitud (indicando si se midió acostado o de pie) y perímetro cefálico.
 2. El sistema calcula la edad (corregida si el niño fue prematuro y tiene menos de 24 meses).
@@ -586,6 +719,30 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Objetivo** | Registrar el resultado de hemoglobina y su clasificación de anemia. |
 | **Precondiciones** | Sesión iniciada en un establecimiento con altitud registrada; niño registrado. |
 
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Ingresa fecha y hemoglobina<br/>observada en g/dL"]:::dig
+    A --> B["Toma la altitud del establecimiento"]:::sis
+    B --> C["Calcula la hemoglobina ajustada"]:::sis
+    C --> D["Clasifica: sin anemia, leve, moderada<br/>o severa, con el umbral vigente"]:::sis
+    D --> E["Confirma"]:::dig
+    E --> G["Guarda observado, altitud, ajustado,<br/>clasificación y versión del umbral"]:::sis
+    G --> H{"¿Hay anemia?"}:::dec
+    H -->|"Sí"| J["Sugiere registrar la entrega<br/>de hierro de tratamiento (CU-17)"]:::sis
+    H -->|"No"| F((Fin)):::ini
+    J --> F
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
+
 **Flujo principal**
 1. El digitador ingresa fecha y valor observado (g/dL).
 2. El sistema toma la altitud del establecimiento y calcula el valor ajustado.
@@ -601,6 +758,31 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Actor** | Digitador (y Admin para aprobar) |
 | **Objetivo** | Corregir un dato clínico mal registrado sin perder el original. |
 | **Precondiciones** | El registro existe y está vigente. |
+
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Abre el registro y elige Corregir"]:::dig
+    A --> B["Modifica los campos y<br/>escribe el motivo"]:::dig
+    B --> C{"¿Es suyo y tiene<br/>menos de 72 horas?"}:::dec
+    C -->|"Sí"| D["Crea la versión nueva vigente;<br/>la anterior queda como histórica"]:::sis
+    C -->|"No (3a)"| E["Crea una solicitud de corrección;<br/>el original sigue vigente"]:::alt
+    E --> G{"El admin revisa<br/>la solicitud"}:::adm
+    G -->|"Aprueba"| D
+    G -->|"Rechaza"| H["El digitador ve el<br/>motivo del rechazo"]:::alt
+    D --> J["Auditoría: ambas versiones,<br/>el motivo y los autores"]:::sis
+    J --> F((Fin)):::ini
+    H --> F
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
 
 **Flujo principal**
 1. El digitador abre el registro y elige "Corregir".
@@ -620,6 +802,31 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Objetivo** | Cortar el acceso de un apoderado a un niño (por ejemplo, por orden judicial). |
 | **Precondiciones** | El vínculo está pendiente o activo. |
 
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Busca el vínculo por DNI<br/>del niño o del apoderado"]:::adm
+    A --> B["Elige Revocar"]:::adm
+    B --> C["Escribe el motivo y la referencia<br/>del documento de sustento"]:::adm
+    C --> D["Revoca el vínculo"]:::sis
+    D --> E["Cierra las sesiones abiertas<br/>del apoderado"]:::sis
+    E --> G["Registra la auditoría"]:::sis
+    G --> H{"¿El apoderado tiene<br/>otros hijos vinculados?"}:::dec
+    H -->|"Sí"| J["Sigue viendo solo<br/>a sus otros hijos"]:::usr
+    H -->|"No"| K["Su cuenta queda<br/>sin contenido"]:::usr
+    J --> F((Fin)):::ini
+    K --> F
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
+
 **Flujo principal**
 1. El admin busca el vínculo por DNI del niño o del apoderado.
 2. Elige "Revocar", escribe el motivo y la referencia del documento que lo sustenta.
@@ -634,6 +841,33 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Actor** | Usuario (apoderado) |
 | **Objetivo** | Saber qué vacunas recibió su hijo y cuáles faltan. |
 | **Precondiciones** | Sesión iniciada y vínculo activo con el niño. |
+
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Elige al niño y abre Vacunas"]:::usr
+    A --> B{"¿Vínculo activo?"}:::dec
+    B -->|"No (2a)"| X["Quita al niño de la app y<br/>muestra un mensaje genérico"]:::alt
+    B -->|"Sí"| C["Calcula el estado de cada dosis"]:::sis
+    C --> D["Muestra el pasaporte agrupado por edad"]:::sis
+    D --> E["Aplicadas: sellos con<br/>fecha y establecimiento"]:::usr
+    D --> G["Pendientes: espacios vacíos<br/>con la fecha recomendada"]:::usr
+    D --> H["Vencidas: resaltadas con la<br/>indicación de acudir"]:::usr
+    E --> J["Toca un sello y ve vacuna, enfermedad<br/>que previene, fecha y lote"]:::usr
+    J --> F((Fin)):::ini
+    G --> F
+    H --> F
+    X --> F
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
 
 **Flujo principal**
 1. El apoderado elige al niño y abre "Vacunas".
@@ -652,6 +886,33 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Objetivo** | Que la familia no olvide la cita. |
 | **Precondiciones** | La cita está programada y el apoderado tiene vínculo activo y avisos activados. |
 
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Cada hora se activa la tarea"]:::sis
+    A --> B["Busca citas a 3 días o de hoy<br/>sin aviso enviado"]:::sis
+    B --> C{"¿Quedan citas<br/>por revisar?"}:::dec
+    C -->|"No"| F((Fin)):::ini
+    C -->|"Sí"| D["Toma la siguiente cita y sus<br/>apoderados con vínculo activo"]:::sis
+    D --> E{"¿Avisos activados?"}:::dec
+    E -->|"No"| C
+    E -->|"Sí"| G{"¿Este aviso ya<br/>se envió?"}:::dec
+    G -->|"Sí"| C
+    G -->|"No"| H["Envía push y correo sin datos<br/>clínicos: fecha y establecimiento"]:::sis
+    H --> J["El apoderado recibe<br/>el recordatorio"]:::usr
+    J --> K["Marca el aviso como enviado"]:::sis
+    K --> C
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
+
 **Flujo principal**
 1. Cada hora, el sistema busca citas que estén a 3 días o que sean hoy y aún no tengan aviso enviado.
 2. Para cada apoderado vinculado con avisos activos, encola un mensaje.
@@ -665,6 +926,27 @@ Las fichas describen paso a paso los casos más importantes. Los que no tienen f
 | **Actor** | Admin |
 | **Objetivo** | Ver la situación de la población atendida por establecimiento y red asistencial. |
 | **Precondiciones** | Sesión iniciada como admin. |
+
+**Diagrama de actividad**
+
+```mermaid
+flowchart TD
+    I((Inicio)):::ini --> A["Elige red, establecimiento<br/>y periodo"]:::adm
+    A --> B["Calcula cifras agregadas,<br/>sin nombres"]:::sis
+    B --> C["Muestra: esquema al día, dosis vencidas por vacuna,<br/>anemia por edad, controles atrasados y uso de la app"]:::sis
+    C --> D{"¿Exportar?"}:::dec
+    D -->|"Sí"| E["Descarga la tabla en Excel"]:::adm
+    D -->|"No"| F((Fin)):::ini
+    E --> F
+
+    classDef ini fill:#1F2937,stroke:#1F2937,color:#FFFFFF
+    classDef dig fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
+    classDef usr fill:#ECF7EE,stroke:#2E7D4F,color:#123D24
+    classDef adm fill:#FBEFE6,stroke:#B5571C,color:#4A2208
+    classDef sis fill:#F3EEFA,stroke:#6D4C9F,color:#2E1F47
+    classDef dec fill:#FFF7E6,stroke:#C2850C,color:#5C3D00
+    classDef alt fill:#FDECEC,stroke:#C0392B,color:#5C1A12
+```
 
 **Flujo principal**
 1. El admin elige red, establecimiento y periodo.
