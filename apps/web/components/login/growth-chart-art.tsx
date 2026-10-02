@@ -101,7 +101,7 @@ export const LAST_CONTROL_POSITION = {
 
 export const CHART_SEQUENCE_END = CURVE_DELAY + CURVE_DURATION;
 
-export function GrowthChartArt(): React.JSX.Element {
+export function GrowthChartArt({ compact = false }: { compact?: boolean }): React.JSX.Element {
   const reduceMotion = useReducedMotion() === true;
 
   return (
@@ -112,9 +112,11 @@ export function GrowthChartArt(): React.JSX.Element {
         return (
           <g key={month}>
             <line x1={x} x2={x} y1={TOP} y2={BOTTOM} stroke="#ffffff" strokeOpacity="0.12" strokeDasharray="2 6" />
-            <text x={x} y={BOTTOM + 26} textAnchor="middle" fill="#ffffff" fillOpacity="0.7" fontSize="13">
-              {month === 0 ? 'Nacer' : `${month} m`}
-            </text>
+            {compact ? null : (
+              <text x={x} y={BOTTOM + 26} textAnchor="middle" fill="#ffffff" fillOpacity="0.7" fontSize="13">
+                {month === 0 ? 'Nacer' : `${month} m`}
+              </text>
+            )}
           </g>
         );
       })}
@@ -133,7 +135,7 @@ export function GrowthChartArt(): React.JSX.Element {
       ))}
       <path d={smoothPath(curveFor(1))} fill="none" stroke="#ffffff" strokeOpacity="0.35" strokeWidth="1.5" strokeDasharray="4 5" />
 
-      {BAND_LABELS.map((band) => {
+      {(compact ? [] : BAND_LABELS).map((band) => {
         const end = toPoint(MAX_MONTH, referenceAt(MAX_MONTH) * band.factor);
 
         return (
