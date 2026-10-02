@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24
+  TURBO_TELEMETRY_DISABLED: 1
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  quality:
+    name: Lint, tipos y pruebas unitarias
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Tipos
+        run: pnpm typecheck
+      - name: Pruebas de las reglas clínicas
+        run: pnpm --filter @carnet/clinical test
+      - name: Pruebas unitarias de la API
+        run: pnpm --filter @carnet/api test --selectProjects unit
+      - name: Auditoría de dependencias de producción
+        run: pnpm audit --prod --audit-level high
+
+  integration:
+    name: Migraciones y pruebas de integración
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: carnet
+          POSTGRES_PASSWORD: carnet
+          POSTGRES_DB: carnet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U carnet -d carnet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://carnet:carnet@localhost:5432/carnet?schema=public
+      REDIS_URL: redis://localhost:6379
+      WEB_URL: http://localhost:3501
+      JWT_SECRET: ci-secret-with-at-least-thirty-two-chars
+      TOTP_ENCRYPTION_KEY: AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+      - name: Compilar los paquetes compartidos
+        run: |
+          pnpm --filter @carnet/contracts build
+          pnpm --filter @carnet/clinical build
+      - name: Aplicar las migraciones desde cero
+        working-directory: apps/api
+        run: pnpm exec prisma migrate deploy
+      - name: Comprobar que schema.prisma coincide con las migraciones
+        working-directory: apps/api
+        run: pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+      - name: Pruebas de integración
+        run: pnpm --filter @carnet/api test --selectProjects integration
+
+  images:
+    name: Imagen ${{ matrix.app }}
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Construir la imagen de producción
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          target: runtime
+          push: false
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+  compose:
+    name: Archivos de Docker Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validar producción y desarrollo con las variables de ejemplo
+        run: |
+          cp .env.example .env
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet
+
+  ci:
+    name: CI
+    if: always()
+    needs: [quality, integration, images, compose]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Resultado de todas las etapas
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Resultados: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "Hay etapas que no terminaron bien."
+              exit 1
+            fi
+          done
