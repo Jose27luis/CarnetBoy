@@ -19,9 +19,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps): Promi
   const { next, vencido } = await searchParams;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-semibold">Ingresar</h1>
+    <div className="flex flex-col gap-7">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[1.75rem] font-semibold leading-tight">Ingresa a tu cuenta</h1>
         <p className="text-muted">Usa el correo con el que te registraron en tu establecimiento.</p>
       </div>
       {vencido === undefined ? null : (
@@ -30,6 +30,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps): Promi
         </p>
       )}
       <LoginForm next={next ?? null} />
+      <p className="border-t border-line pt-5 text-sm text-muted">
+        Si olvidaste tu contraseña, pide una temporal al administrador de tu establecimiento.
+      </p>
     </div>
   );
 }
