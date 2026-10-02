@@ -86,6 +86,7 @@ Runtime: Node.js 24 LTS.
 | `growth` | Controles CRED, puntaje Z y clasificación nutricional |
 | `anemia` | Dosajes de hemoglobina, clasificación y suplementación con hierro |
 | `schedule` | Citas y recordatorios |
+| `corrections` | Solicitudes de corrección y su aprobación |
 | `notifications` | Cola de mensajes salientes (correo y push) |
 | `reports` | Carnet en PDF |
 | `audit` | Registro inmutable de eventos |
