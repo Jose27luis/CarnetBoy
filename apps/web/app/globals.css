@@ -19,7 +19,7 @@
   --font-display: var(--font-lexend), 'Trebuchet MS', sans-serif;
   --font-sans: var(--font-source-sans), system-ui, sans-serif;
 
-  --radius-control: 8px;
+  --radius-control: 10px;
   --radius-panel: 14px;
 }
 
