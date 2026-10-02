@@ -1,0 +1,226 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  DIGITIZER
+  GUARDIAN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum CatalogKind {
+  VACCINATION_SCHEDULE
+  HEMOGLOBIN_THRESHOLDS
+  APPOINTMENT_INTERVALS
+}
+
+enum CatalogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum AppointmentType {
+  GROWTH_CHECK
+  VACCINATION
+  HEMOGLOBIN_TEST
+}
+
+model Account {
+  id                     String        @id @default(uuid()) @db.Uuid
+  email                  String        @unique @db.VarChar(254)
+  fullName               String        @map("full_name") @db.VarChar(160)
+  role                   Role
+  status                 AccountStatus @default(ACTIVE)
+  passwordHash           String        @map("password_hash") @db.VarChar(255)
+  passwordChangeRequired Boolean       @default(true) @map("password_change_required")
+  totpSecretEncrypted    String?       @map("totp_secret_encrypted") @db.VarChar(255)
+  totpEnabledAt          DateTime?     @map("totp_enabled_at") @db.Timestamptz(3)
+  totpLastTimeStep       Int?          @map("totp_last_time_step")
+  failedAttempts         Int           @default(0) @map("failed_attempts")
+  lockedUntil            DateTime?     @map("locked_until") @db.Timestamptz(3)
+  version                Int           @default(1)
+  createdAt              DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions            Session[]
+  assignments         FacilityAssignment[] @relation("AssignedAccount")
+  assignmentsGranted  FacilityAssignment[] @relation("AssignmentGrantedBy")
+  assignmentsEnded    FacilityAssignment[] @relation("AssignmentEndedBy")
+  catalogVersions     CatalogVersion[]
+  auditEvents         AuditEvent[]
+  idempotencyKeys     IdempotencyKey[]
+
+  @@map("accounts")
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  accountId        String    @map("account_id") @db.Uuid
+  refreshTokenHash String    @unique @map("refresh_token_hash") @db.Char(64)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@map("sessions")
+}
+
+model Facility {
+  id             String   @id @default(uuid()) @db.Uuid
+  ipressCode     String   @unique @map("ipress_code") @db.Char(8)
+  name           String   @db.VarChar(160)
+  healthNetwork  String   @map("health_network") @db.VarChar(120)
+  altitudeMeters Int      @map("altitude_meters")
+  active         Boolean  @default(true)
+  version        Int      @default(1)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  assignments FacilityAssignment[]
+
+  @@map("facilities")
+}
+
+model FacilityAssignment {
+  id          String    @id @default(uuid()) @db.Uuid
+  accountId   String    @map("account_id") @db.Uuid
+  facilityId  String    @map("facility_id") @db.Uuid
+  startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamptz(3)
+  endedAt     DateTime? @map("ended_at") @db.Timestamptz(3)
+  grantedById String    @map("granted_by_id") @db.Uuid
+  endedById   String?   @map("ended_by_id") @db.Uuid
+
+  account   Account  @relation("AssignedAccount", fields: [accountId], references: [id])
+  facility  Facility @relation(fields: [facilityId], references: [id])
+  grantedBy Account  @relation("AssignmentGrantedBy", fields: [grantedById], references: [id])
+  endedBy   Account? @relation("AssignmentEndedBy", fields: [endedById], references: [id])
+
+  @@index([accountId])
+  @@index([facilityId])
+  @@map("facility_assignments")
+}
+
+model Vaccine {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique @db.VarChar(32)
+  name      String   @db.VarChar(120)
+  prevents  String   @db.VarChar(240)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  scheduledDoses ScheduledDose[]
+
+  @@map("vaccines")
+}
+
+model CatalogVersion {
+  id          String        @id @default(uuid()) @db.Uuid
+  kind        CatalogKind
+  norm        String        @db.VarChar(240)
+  status      CatalogStatus @default(DRAFT)
+  validFrom   DateTime?     @map("valid_from") @db.Date
+  validTo     DateTime?     @map("valid_to") @db.Date
+  publishedAt DateTime?     @map("published_at") @db.Timestamptz(3)
+  createdById String        @map("created_by_id") @db.Uuid
+  version     Int           @default(1)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  createdBy            Account               @relation(fields: [createdById], references: [id])
+  scheduledDoses       ScheduledDose[]
+  hemoglobinThresholds HemoglobinThreshold[]
+  appointmentIntervals AppointmentInterval[]
+
+  @@index([kind, status, validFrom])
+  @@map("catalog_versions")
+}
+
+model ScheduledDose {
+  id                 String @id @default(uuid()) @db.Uuid
+  catalogVersionId   String @map("catalog_version_id") @db.Uuid
+  vaccineId          String @map("vaccine_id") @db.Uuid
+  doseNumber         Int    @map("dose_number")
+  recommendedAgeDays Int    @map("recommended_age_days")
+  maxAgeDays         Int    @map("max_age_days")
+
+  catalogVersion CatalogVersion @relation(fields: [catalogVersionId], references: [id], onDelete: Cascade)
+  vaccine        Vaccine        @relation(fields: [vaccineId], references: [id])
+
+  @@unique([catalogVersionId, vaccineId, doseNumber])
+  @@map("scheduled_doses")
+}
+
+model HemoglobinThreshold {
+  id               String  @id @default(uuid()) @db.Uuid
+  catalogVersionId String  @map("catalog_version_id") @db.Uuid
+  minAgeMonths     Int     @map("min_age_months")
+  maxAgeMonths     Int     @map("max_age_months")
+  normalFrom       Decimal @map("normal_from") @db.Decimal(4, 1)
+  mildFrom         Decimal @map("mild_from") @db.Decimal(4, 1)
+  moderateFrom     Decimal @map("moderate_from") @db.Decimal(4, 1)
+
+  catalogVersion CatalogVersion @relation(fields: [catalogVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([catalogVersionId, minAgeMonths])
+  @@map("hemoglobin_thresholds")
+}
+
+model AppointmentInterval {
+  id               String          @id @default(uuid()) @db.Uuid
+  catalogVersionId String          @map("catalog_version_id") @db.Uuid
+  appointmentType  AppointmentType @map("appointment_type")
+  minAgeMonths     Int             @map("min_age_months")
+  maxAgeMonths     Int             @map("max_age_months")
+  intervalDays     Int             @map("interval_days")
+
+  catalogVersion CatalogVersion @relation(fields: [catalogVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([catalogVersionId, appointmentType, minAgeMonths])
+  @@map("appointment_intervals")
+}
+
+model AuditEvent {
+  id         BigInt   @id @default(autoincrement())
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String   @db.VarChar(64)
+  entity     String   @db.VarChar(32)
+  entityId   String   @map("entity_id") @db.Uuid
+  before     Json?
+  after      Json?
+  ip         String?  @db.VarChar(45)
+
+  actor Account? @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([entity, entityId, occurredAt])
+  @@index([occurredAt])
+  @@map("audit_events")
+}
+
+model IdempotencyKey {
+  accountId      String   @map("account_id") @db.Uuid
+  key            String   @db.VarChar(64)
+  operation      String   @db.VarChar(64)
+  requestHash    String   @map("request_hash") @db.Char(64)
+  responseStatus Int      @map("response_status")
+  responseBody   Json     @map("response_body")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(3)
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@id([accountId, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
