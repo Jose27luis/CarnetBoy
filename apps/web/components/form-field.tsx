@@ -50,8 +50,6 @@ interface FormFieldProps {
   pattern?: string;
   required?: boolean;
   autoComplete?: string;
-  value?: string;
-  onValueChange?: (value: string) => void;
 }
 
 export function FormField({
@@ -70,8 +68,6 @@ export function FormField({
   pattern,
   required = true,
   autoComplete = 'off',
-  value,
-  onValueChange,
 }: FormFieldProps): React.JSX.Element {
   return (
     <FieldFrame label={label} help={help} error={error}>
@@ -80,7 +76,7 @@ export function FormField({
           id={id}
           name={name}
           type={type}
-          {...(value === undefined ? { defaultValue } : { value, onChange: (event) => onValueChange?.(event.target.value) })}
+          defaultValue={defaultValue}
           inputMode={inputMode}
           maxLength={maxLength}
           minLength={minLength}
