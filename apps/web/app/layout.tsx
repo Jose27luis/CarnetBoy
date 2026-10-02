@@ -29,6 +29,7 @@ export const viewport: Viewport = {
   themeColor: '#0b7fb3',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }): React.JSX.Element {
