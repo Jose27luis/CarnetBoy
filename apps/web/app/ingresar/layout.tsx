@@ -1,5 +1,4 @@
-import { Wordmark } from '@/components/brand';
-import { GrowthPanel } from '@/components/login/growth-panel';
+import { GrowthPanel, MobileGrowthHero } from '@/components/login/growth-panel';
 
 const GRAPH_PAPER =
   'bg-canvas bg-[linear-gradient(var(--color-celeste-100)_1px,transparent_1px),linear-gradient(90deg,var(--color-celeste-100)_1px,transparent_1px)] bg-[size:28px_28px]';
@@ -11,10 +10,12 @@ export default function LoginLayout({ children }: { children: React.ReactNode })
         <GrowthPanel />
       </aside>
       <main className={`flex min-h-dvh flex-col ${GRAPH_PAPER}`}>
-        <header className="px-5 pt-6 lg:hidden">
-          <Wordmark />
-        </header>
-        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8">{children}</div>
+        <div className="lg:hidden">
+          <MobileGrowthHero />
+        </div>
+        <div className="relative z-10 -mt-20 flex flex-1 items-start justify-center px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-8 lg:mt-0 lg:items-center lg:py-10">
+          {children}
+        </div>
       </main>
     </div>
   );
