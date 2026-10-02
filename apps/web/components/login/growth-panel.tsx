@@ -5,19 +5,39 @@ import { motion, useReducedMotion } from 'motion/react';
 import { BrandMark } from '../brand';
 import { CHART_SEQUENCE_END, GrowthChartArt, LAST_CONTROL_POSITION } from './growth-chart-art';
 
+function PanelBrand(): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="rounded-[10px] bg-white p-1">
+        <BrandMark className="size-8" />
+      </span>
+      <span className="font-display text-lg font-semibold">Carnet CRED</span>
+    </div>
+  );
+}
+
+export function MobileGrowthHero(): React.JSX.Element {
+  return (
+    <div className="rounded-b-[28px] bg-celeste-700 px-5 pb-28 pt-[max(1.25rem,env(safe-area-inset-top))] text-white sm:px-8">
+      <PanelBrand />
+      <div className="mx-auto mt-4 w-[78%] max-w-[340px]">
+        <GrowthChartArt compact />
+      </div>
+      <p className="mx-auto max-w-sm text-center font-display text-lg font-medium leading-snug">
+        El crecimiento de cada niño, registrado control a control.
+      </p>
+    </div>
+  );
+}
+
 export function GrowthPanel(): React.JSX.Element {
   const reduceMotion = useReducedMotion() === true;
 
   return (
     <div className="relative flex h-full flex-col justify-between gap-10 overflow-hidden bg-celeste-700 px-6 py-8 text-white sm:px-10 lg:px-14 lg:py-12">
-      <div className="flex items-center gap-2.5">
-        <span className="rounded-[10px] bg-white p-1">
-          <BrandMark className="size-8" />
-        </span>
-        <span className="font-display text-lg font-semibold">Carnet CRED</span>
-      </div>
+      <PanelBrand />
 
-      <div className="relative mx-auto hidden w-full max-w-[560px] sm:block">
+      <div className="relative mx-auto w-full max-w-[560px]">
         <GrowthChartArt />
         <motion.div
           className="absolute w-max -translate-x-[92%] -translate-y-[135%] rounded-(--radius-panel) bg-white px-4 py-3 text-ink shadow-[0_20px_40px_-20px_rgba(4,40,60,0.6)]"
