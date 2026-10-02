@@ -1,0 +1,73 @@
+{
+  "name": "@carnet/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "prisma generate && nest build",
+    "dev": "prisma generate && nest start --watch",
+    "start": "node dist/main.js",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
+    "lint": "prisma generate && eslint src test",
+    "test": "prisma generate && NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "create-admin": "node dist/scripts/create-admin.js"
+  },
+  "dependencies": {
+    "@carnet/clinical": "workspace:*",
+    "@carnet/contracts": "workspace:*",
+    "@fastify/static": "^10.1.5",
+    "@nestjs/common": "^12.1.0",
+    "@nestjs/core": "^12.1.0",
+    "@nestjs/jwt": "^12.0.2",
+    "@nestjs/platform-fastify": "^12.1.0",
+    "@nestjs/swagger": "^12.0.2",
+    "@nestjs/throttler": "^6.7.1",
+    "@node-rs/argon2": "^2.2.1",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "fastify": "^5.12.5",
+    "ioredis": "^6.0.0",
+    "otplib": "^13.5.0",
+    "prisma": "^7.10.0",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.0",
+    "@nestjs/schematics": "^12.0.0",
+    "@nestjs/testing": "^12.1.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.4.1",
+    "@types/qrcode": "^1.5.6",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.14",
+    "typescript": "^5.9.3"
+  },
+  "jest": {
+    "projects": [
+      {
+        "displayName": "unit",
+        "rootDir": "src",
+        "testRegex": "\\.spec\\.ts$",
+        "testEnvironment": "node",
+        "transform": {
+          "^.+\\.ts$": ["ts-jest", { "tsconfig": "<rootDir>/../tsconfig.json" }]
+        }
+      },
+      {
+        "displayName": "integration",
+        "rootDir": "test",
+        "testRegex": "\\.int-spec\\.ts$",
+        "testEnvironment": "node",
+        "globalSetup": "<rootDir>/support/global-setup.ts",
+        "globalTeardown": "<rootDir>/support/global-teardown.ts",
+        "transform": {
+          "^.+\\.ts$": ["ts-jest", { "tsconfig": "<rootDir>/../tsconfig.json" }]
+        }
+      }
+    ]
+  }
+}
