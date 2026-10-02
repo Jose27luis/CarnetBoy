@@ -23,7 +23,9 @@ export function TotpForm({ submitLabel }: { submitLabel: string }): React.JSX.El
         error={fieldError(state, 'code')}
       />
       <FormMessage state={state} />
-      <SubmitButton pendingLabel="Verificando">{submitLabel}</SubmitButton>
+      <SubmitButton pendingLabel="Verificando" className="mt-1 w-full text-base">
+        {submitLabel}
+      </SubmitButton>
     </form>
   );
 }
