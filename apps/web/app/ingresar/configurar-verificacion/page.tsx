@@ -33,8 +33,8 @@ export default async function TotpEnrollmentPage(): Promise<React.JSX.Element> {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1.5">
-        <p className="text-sm font-semibold uppercase tracking-wider text-celeste-700">Último paso</p>
-        <h1 className="text-2xl font-semibold">Protege tu cuenta</h1>
+        <p className="text-sm font-semibold text-celeste-700">Paso 2 de 2</p>
+        <h1 className="text-[1.75rem] font-semibold leading-tight">Protege tu cuenta</h1>
         <p className="text-muted">
           Tu cuenta da acceso a datos de salud de niños, por eso pide un segundo código además de la contraseña.
         </p>
