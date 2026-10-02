@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { FormField } from '@/components/form-field';
+import { FloatingInput } from '@/components/floating-field';
 import { FormMessage } from '@/components/form-message';
 import { SubmitButton } from '@/components/submit-button';
 import { fieldError, IDLE } from '@/lib/form-state';
@@ -12,7 +12,7 @@ export function TotpForm({ submitLabel }: { submitLabel: string }): React.JSX.El
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <FormField
+      <FloatingInput
         label="Código de 6 dígitos"
         name="code"
         inputMode="numeric"
@@ -23,7 +23,7 @@ export function TotpForm({ submitLabel }: { submitLabel: string }): React.JSX.El
         error={fieldError(state, 'code')}
       />
       <FormMessage state={state} />
-      <SubmitButton pendingLabel="Verificando" className="mt-1 w-full text-base">
+      <SubmitButton pendingLabel="Verificando" className="mt-2 h-13 w-full text-base">
         {submitLabel}
       </SubmitButton>
     </form>
