@@ -1,0 +1,56 @@
+name: carnet-dev
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:5436:5432"
+
+  redis:
+    ports:
+      - "127.0.0.1:6382:6379"
+
+  api:
+    build:
+      target: development
+    image: carnet/api:dev
+    environment:
+      NODE_ENV: development
+      WEB_URL: http://localhost:3501
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/api/test:/app/apps/api/test
+      - ./apps/api/prisma:/app/apps/api/prisma
+      - ./apps/api/package.json:/app/apps/api/package.json
+      - ./packages/contracts/src:/app/packages/contracts/src
+      - ./packages/clinical/src:/app/packages/clinical/src
+      - ./eslint.config.mjs:/app/eslint.config.mjs
+    ports:
+      - "127.0.0.1:4300:4000"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  web:
+    build:
+      target: development
+    image: carnet/web:dev
+    environment:
+      NODE_ENV: development
+      WEB_URL: http://localhost:3501
+    volumes:
+      - ./apps/web/app:/app/apps/web/app
+      - ./apps/web/components:/app/apps/web/components
+      - ./apps/web/lib:/app/apps/web/lib
+      - ./apps/web/public:/app/apps/web/public
+      - ./apps/web/proxy.ts:/app/apps/web/proxy.ts
+      - ./apps/web/eslint.config.mjs:/app/apps/web/eslint.config.mjs
+      - ./apps/web/next.config.ts:/app/apps/web/next.config.ts
+      - ./packages/contracts/src:/app/packages/contracts/src
+      - ./eslint.config.mjs:/app/eslint.config.mjs
+    ports: !override
+      - "127.0.0.1:3501:3000"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
