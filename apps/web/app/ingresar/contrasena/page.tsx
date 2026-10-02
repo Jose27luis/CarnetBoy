@@ -11,8 +11,8 @@ export default async function InitialPasswordPage(): Promise<React.JSX.Element> 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1.5">
-        <p className="text-sm font-semibold uppercase tracking-wider text-celeste-700">Paso 1 de 2</p>
-        <h1 className="text-2xl font-semibold">Crea tu contraseña</h1>
+        <p className="text-sm font-semibold text-celeste-700">Paso 1 de 2</p>
+        <h1 className="text-[1.75rem] font-semibold leading-tight">Crea tu contraseña</h1>
         <p className="text-muted">Ingresaste con una contraseña temporal. Reemplázala por una que solo tú conozcas.</p>
       </div>
       <PasswordForm />
