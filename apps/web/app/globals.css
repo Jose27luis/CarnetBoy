@@ -1,0 +1,70 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-canvas: #f5fafd;
+  --color-celeste-50: #eef8fd;
+  --color-celeste-100: #d6effa;
+  --color-celeste-200: #ade0f5;
+  --color-celeste-500: #38b6e8;
+  --color-celeste-700: #0b7fb3;
+  --color-celeste-800: #086a96;
+  --color-celeste-900: #0a4f6f;
+  --color-ink: #0e2a3a;
+  --color-muted: #4b6577;
+  --color-line: #d3e6f0;
+  --color-danger: #b42318;
+  --color-ok: #127a4b;
+  --color-warn: #a15c07;
+
+  --font-display: var(--font-lexend), 'Trebuchet MS', sans-serif;
+  --font-sans: var(--font-source-sans), system-ui, sans-serif;
+
+  --radius-control: 8px;
+  --radius-panel: 14px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-celeste-700);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-celeste-200);
+    color: var(--color-ink);
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}
