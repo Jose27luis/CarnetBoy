@@ -1,6 +1,7 @@
 'use client';
 
 import { CircleAlert, CircleCheck, Copy } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import type { FormState } from '@/lib/form-state';
 import { buttonClass } from '@/lib/ui';
@@ -28,11 +29,7 @@ function SecretValue({ value }: { value: string }): React.JSX.Element {
   );
 }
 
-export function FormMessage({ state }: { state: FormState }): React.JSX.Element | null {
-  if (state.status === 'idle') {
-    return null;
-  }
-
+function MessageBody({ state }: { state: Exclude<FormState, { status: 'idle' }> }): React.JSX.Element {
   if (state.status === 'error') {
     return (
       <p role="alert" className="flex items-start gap-2 rounded-(--radius-control) border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
@@ -50,5 +47,24 @@ export function FormMessage({ state }: { state: FormState }): React.JSX.Element 
       </p>
       {state.secret === undefined ? null : <SecretValue value={state.secret} />}
     </div>
+  );
+}
+
+export function FormMessage({ state }: { state: FormState }): React.JSX.Element {
+  return (
+    <AnimatePresence initial={false}>
+      {state.status === 'idle' ? null : (
+        <motion.div
+          key={`${state.status}:${state.message}`}
+          initial={{ opacity: 0, height: 0, y: -4 }}
+          animate={{ opacity: 1, height: 'auto', y: 0 }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="overflow-hidden"
+        >
+          <MessageBody state={state} />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
