@@ -25,7 +25,7 @@ describe('ingreso', () => {
   it('exige el segundo factor a un admin antes de abrir la sesión', async () => {
     const admin = await createAccount(context, 'ADMIN');
 
-    const response = await login(context, admin.email);
+    const response = await login(context, admin.identifier);
 
     expect(response.statusCode).toBe(200);
     expect(response.json<LoginStep>().step).toBe('TOTP_REQUIRED');
@@ -35,8 +35,8 @@ describe('ingreso', () => {
   it('abre la sesión del admin con un código válido y rechaza reutilizarlo', async () => {
     const admin = await createAccount(context, 'ADMIN');
     const code = totpCode(admin.totpSecret);
-    const first = (await login(context, admin.email)).json<LoginStep>();
-    const second = (await login(context, admin.email)).json<LoginStep>();
+    const first = (await login(context, admin.identifier)).json<LoginStep>();
+    const second = (await login(context, admin.identifier)).json<LoginStep>();
 
     if (first.step !== 'TOTP_REQUIRED' || second.step !== 'TOTP_REQUIRED') {
       throw new Error('Se esperaba el paso del segundo factor');
@@ -62,11 +62,11 @@ describe('ingreso', () => {
     const digitizer = await createAccount(context, 'DIGITIZER');
 
     for (let attempt = 1; attempt <= 5; attempt += 1) {
-      const failed = await login(context, digitizer.email, 'contraseña-equivocada');
+      const failed = await login(context, digitizer.identifier, 'contraseña-equivocada');
       expect(failed.json<ApiErrorBody>().code).toBe('INVALID_CREDENTIALS');
     }
 
-    const blocked = await login(context, digitizer.email, TEST_PASSWORD);
+    const blocked = await login(context, digitizer.identifier, TEST_PASSWORD);
 
     expect(blocked.statusCode).toBe(423);
     expect(blocked.json<ApiErrorBody>().code).toBe('ACCOUNT_LOCKED');
@@ -81,7 +81,7 @@ describe('ingreso', () => {
 
   it('lleva a una cuenta nueva por el cambio de contraseña y el enrolamiento del segundo factor', async () => {
     const digitizer = await createAccount(context, 'DIGITIZER', { passwordChangeRequired: true, totpEnrolled: false });
-    const first = (await login(context, digitizer.email)).json<LoginStep>();
+    const first = (await login(context, digitizer.identifier)).json<LoginStep>();
 
     if (first.step !== 'PASSWORD_CHANGE_REQUIRED') {
       throw new Error(`Se esperaba el cambio de contraseña y llegó ${first.step}`);
@@ -119,13 +119,13 @@ describe('ingreso', () => {
 
     expect(verified.json<LoginStep>().step).toBe('AUTHENTICATED');
 
-    const nextLogin = await login(context, digitizer.email, 'una-clave-nueva-y-larga');
+    const nextLogin = await login(context, digitizer.identifier, 'una-clave-nueva-y-larga');
     expect(nextLogin.json<LoginStep>().step).toBe('TOTP_REQUIRED');
   });
 
   it('no acepta el token de un paso del ingreso como token de acceso', async () => {
     const admin = await createAccount(context, 'ADMIN');
-    const step = (await login(context, admin.email)).json<LoginStep>();
+    const step = (await login(context, admin.identifier)).json<LoginStep>();
 
     if (step.step !== 'TOTP_REQUIRED') {
       throw new Error('Se esperaba el paso del segundo factor');
@@ -142,6 +142,6 @@ describe('ingreso', () => {
     const response = await request(context, { method: 'GET', url: '/v1/auth/me', token: admin.token });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json<{ email: string; role: string }>()).toMatchObject({ email: admin.email, role: 'ADMIN' });
+    expect(response.json<{ email: string; role: string }>()).toMatchObject({ email: admin.identifier, role: 'ADMIN' });
   });
 });
