@@ -36,8 +36,8 @@ class AuditActorDto {
   @ApiProperty()
   fullName!: string;
 
-  @ApiProperty()
-  email!: string;
+  @ApiProperty({ type: String, nullable: true })
+  email!: string | null;
 }
 
 export class AuditEventDto implements AuditEventItem {
