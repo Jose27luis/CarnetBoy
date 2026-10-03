@@ -23,7 +23,7 @@ export interface TestContext {
 
 export interface TestAccount {
   id: string;
-  email: string;
+  identifier: string;
   role: Role;
   totpSecret: string;
 }
@@ -70,10 +70,10 @@ export async function createAccount(
 ): Promise<TestAccount> {
   const totpSecret = generateSecret();
   const enrolled = options.totpEnrolled ?? role !== 'GUARDIAN';
-  const email = `${role.toLowerCase()}-${randomUUID().slice(0, 8)}@prueba.pe`;
+  const identifier = role === 'GUARDIAN' ? randomDni() : `${role.toLowerCase()}-${randomUUID().slice(0, 8)}@prueba.pe`;
   const account = await context.prisma.account.create({
     data: {
-      email,
+      ...(role === 'GUARDIAN' ? { dni: identifier } : { email: identifier }),
       fullName: `Persona de prueba ${randomUUID().slice(0, 4)}`,
       role,
       passwordHash: await hash(TEST_PASSWORD, ARGON2_OPTIONS),
@@ -84,15 +84,23 @@ export async function createAccount(
     },
   });
 
-  return { id: account.id, email, role, totpSecret };
+  return { id: account.id, identifier, role, totpSecret };
 }
 
-export async function login(context: TestContext, email: string, password: string = TEST_PASSWORD): Promise<LightMyRequestResponse> {
-  return request(context, { method: 'POST', url: '/v1/auth/login', payload: { email, password } });
+let dniSequence = randomInt(10_000_000, 90_000_000);
+
+export function randomDni(): string {
+  dniSequence += randomInt(1, 500);
+
+  return String(dniSequence);
+}
+
+export async function login(context: TestContext, identifier: string, password: string = TEST_PASSWORD): Promise<LightMyRequestResponse> {
+  return request(context, { method: 'POST', url: '/v1/auth/login', payload: { identifier, password } });
 }
 
 export async function signIn(context: TestContext, account: TestAccount): Promise<SignedInAccount> {
-  const first = await login(context, account.email);
+  const first = await login(context, account.identifier);
   let step = first.json<LoginStep>();
 
   if (step.step === 'TOTP_REQUIRED') {
@@ -113,4 +121,36 @@ export async function signIn(context: TestContext, account: TestAccount): Promis
 
 export async function signInAs(context: TestContext, role: Role): Promise<SignedInAccount> {
   return signIn(context, await createAccount(context, role));
+}
+
+export interface FieldDigitizer extends SignedInAccount {
+  facilityId: string;
+  headers: Record<string, string>;
+}
+
+let ipressSequence = randomInt(10_000_000, 90_000_000);
+
+export async function createFacility(context: TestContext, altitudeMeters = 150): Promise<string> {
+  ipressSequence += randomInt(1, 500);
+  const facility = await context.prisma.facility.create({
+    data: { ipressCode: String(ipressSequence), name: `Establecimiento ${ipressSequence}`, healthNetwork: 'Red de prueba', altitudeMeters },
+  });
+
+  return facility.id;
+}
+
+export async function signInDigitizerAt(context: TestContext, facilityId?: string): Promise<FieldDigitizer> {
+  const grantor = await createAccount(context, 'ADMIN');
+  const digitizer = await signInAs(context, 'DIGITIZER');
+  const assignedFacility = facilityId ?? (await createFacility(context));
+
+  await context.prisma.facilityAssignment.create({
+    data: { accountId: digitizer.id, facilityId: assignedFacility, grantedById: grantor.id },
+  });
+
+  return { ...digitizer, facilityId: assignedFacility, headers: { 'x-facility-id': assignedFacility } };
+}
+
+export function idempotencyKey(): string {
+  return randomUUID().replaceAll('-', '');
 }
