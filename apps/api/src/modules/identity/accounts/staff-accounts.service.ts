@@ -18,11 +18,13 @@ export interface NewStaffAccount {
   role: StaffRole;
 }
 
-function isStaffAccount(account: Account): account is Account & { role: StaffRole } {
-  return account.role === 'ADMIN' || account.role === 'DIGITIZER';
+type StaffAccountRow = Account & { role: StaffRole; email: string };
+
+function isStaffAccount(account: Account): account is StaffAccountRow {
+  return (account.role === 'ADMIN' || account.role === 'DIGITIZER') && account.email !== null;
 }
 
-export function toStaffAccount(account: Account & { role: StaffRole }, now: Date = new Date()): StaffAccount {
+export function toStaffAccount(account: StaffAccountRow, now: Date = new Date()): StaffAccount {
   return {
     locked: account.lockedUntil !== null && account.lockedUntil > now,
     id: account.id,
@@ -195,7 +197,7 @@ export class StaffAccountsService {
     }
   }
 
-  private requireStaff(account: Account): Account & { role: StaffRole } {
+  private requireStaff(account: Account): StaffAccountRow {
     if (!isStaffAccount(account)) {
       throw new Error(`La cuenta ${account.id} no pertenece al personal.`);
     }
