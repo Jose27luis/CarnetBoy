@@ -67,4 +67,21 @@
       animation-iteration-count: 1 !important;
     }
   }
+
+  @media print {
+    body:has([data-print-area]) * {
+      visibility: hidden;
+    }
+
+    body:has([data-print-area]) [data-print-area],
+    body:has([data-print-area]) [data-print-area] * {
+      visibility: visible;
+    }
+
+    body:has([data-print-area]) [data-print-area] {
+      position: absolute;
+      inset: 0 0 auto 0;
+      margin: 1.5cm;
+    }
+  }
 }
