@@ -9,7 +9,7 @@ function PanelBrand(): React.JSX.Element {
   return (
     <div className="flex items-center gap-2.5">
       <span className="rounded-[10px] bg-white p-1">
-        <BrandMark className="size-8" />
+        <BrandMark className="h-8 w-auto" />
       </span>
       <span className="font-display text-lg font-semibold">Carnet CRED</span>
     </div>
