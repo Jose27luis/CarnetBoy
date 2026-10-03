@@ -13,14 +13,7 @@ export function LoginForm({ next }: { next: string | null }): React.JSX.Element 
   return (
     <form action={action} className="flex flex-col gap-4">
       {next === null ? null : <input type="hidden" name="next" value={next} />}
-      <FloatingInput
-        label="Correo"
-        name="email"
-        type="email"
-        inputMode="email"
-        autoComplete="username"
-        error={fieldError(state, 'email')}
-      />
+      <FloatingInput label="DNI o correo" name="identifier" autoComplete="username" error={fieldError(state, 'identifier')} />
       <FloatingPassword label="Contraseña" name="password" autoComplete="current-password" error={fieldError(state, 'password')} />
       <FormMessage state={state} />
       <SubmitButton pendingLabel="Ingresando" className="mt-2 h-13 w-full text-base">
