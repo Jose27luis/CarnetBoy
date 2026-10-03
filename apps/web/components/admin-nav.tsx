@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, CalendarClock, ClipboardList, Droplet, LayoutDashboard, ScrollText, Syringe, Users } from 'lucide-react';
+import { Building2, CalendarClock, ClipboardList, Droplet, LayoutDashboard, Link2, ScrollText, Syringe, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -11,6 +11,7 @@ const GROUPS = [
       { href: '/admin', label: 'Resumen', icon: LayoutDashboard, exact: true },
       { href: '/admin/cuentas', label: 'Cuentas', icon: Users },
       { href: '/admin/establecimientos', label: 'Establecimientos', icon: Building2 },
+      { href: '/admin/vinculos', label: 'Vínculos de apoderados', icon: Link2 },
     ],
   },
   {
