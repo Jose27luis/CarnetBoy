@@ -4,7 +4,7 @@ import type { LoginChallenge } from '@carnet/contracts';
 import { z } from 'zod';
 import { DomainError } from '../../../common/errors/domain-error';
 
-export const LOGIN_CHALLENGE_STAGES = ['PASSWORD_CHANGE', 'TOTP_ENROLLMENT', 'TOTP'] as const;
+export const LOGIN_CHALLENGE_STAGES = ['PASSWORD_CHANGE', 'TOTP_ENROLLMENT', 'TOTP', 'ACTIVATION'] as const;
 export type LoginChallengeStage = (typeof LOGIN_CHALLENGE_STAGES)[number];
 
 const CHALLENGE_TTL_SECONDS = 10 * 60;
@@ -19,9 +19,9 @@ const challengePayloadSchema = z.object({
 export class LoginChallengeService {
   constructor(private readonly jwt: JwtService) {}
 
-  issue(accountId: string, stage: LoginChallengeStage, now: Date = new Date()): LoginChallenge {
+  issue(subject: string, stage: LoginChallengeStage, now: Date = new Date()): LoginChallenge {
     const challengeToken = this.jwt.sign(
-      { sub: accountId, stage },
+      { sub: subject, stage },
       { expiresIn: CHALLENGE_TTL_SECONDS, audience: CHALLENGE_AUDIENCE },
     );
 
@@ -31,7 +31,7 @@ export class LoginChallengeService {
     };
   }
 
-  accountFor(challengeToken: string, allowedStages: readonly LoginChallengeStage[]): string {
+  subjectFor(challengeToken: string, allowedStages: readonly LoginChallengeStage[]): string {
     let decoded: unknown;
 
     try {
