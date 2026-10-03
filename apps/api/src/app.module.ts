@@ -9,6 +9,7 @@ import { ThrottlingModule } from './infrastructure/throttling/throttling.module'
 import { UserOrIpThrottlerGuard } from './infrastructure/throttling/user-or-ip-throttler.guard';
 import { AuditModule } from './modules/audit/audit.module';
 import { CatalogsModule } from './modules/catalogs/catalogs.module';
+import { ChildrenModule } from './modules/children/children.module';
 import { FacilitiesModule } from './modules/facilities/facilities.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
@@ -25,6 +26,7 @@ import { IdentityModule } from './modules/identity/identity.module';
     IdentityModule,
     FacilitiesModule,
     CatalogsModule,
+    ChildrenModule,
   ],
   providers: [
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
