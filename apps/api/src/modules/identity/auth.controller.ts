@@ -40,7 +40,7 @@ export class AuthController {
   @ApiResponse({ status: 423, type: ApiErrorDto, description: 'ACCOUNT_LOCKED' })
   @ApiResponse({ status: 429, type: ApiErrorDto })
   login(@Body() body: LoginDto, @ClientIp() ip: string): Promise<LoginStep> {
-    return this.logins.login(body.email, body.password, ip);
+    return this.logins.login(body.identifier, body.password, ip);
   }
 
   @Post('password/initial')
