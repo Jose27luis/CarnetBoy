@@ -1,7 +1,7 @@
 export interface AuditEventItem {
   id: string;
   occurredAt: string;
-  actor: { id: string; fullName: string; email: string } | null;
+  actor: { id: string; fullName: string; email: string | null } | null;
   action: string;
   entity: string;
   entityId: string;
