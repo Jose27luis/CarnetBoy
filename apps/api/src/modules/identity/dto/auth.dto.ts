@@ -9,15 +9,15 @@ import {
   TOTP_CODE_PATTERN,
   type TotpEnrollment,
 } from '@carnet/contracts';
-import { IsEmail, IsString, Length, Matches, MaxLength } from 'class-validator';
+import { IsString, Length, Matches } from 'class-validator';
 
 export const LOGIN_STEPS = ['AUTHENTICATED', 'PASSWORD_CHANGE_REQUIRED', 'TOTP_ENROLLMENT_REQUIRED', 'TOTP_REQUIRED'] as const;
 
 export class LoginDto {
-  @ApiProperty({ example: 'digitador@ejemplo.pe' })
-  @IsEmail()
-  @MaxLength(254)
-  email!: string;
+  @ApiProperty({ example: 'digitador@ejemplo.pe', description: 'Correo del personal o DNI del apoderado' })
+  @IsString()
+  @Length(3, 254)
+  identifier!: string;
 
   @ApiProperty()
   @IsString()
@@ -58,8 +58,11 @@ export class CurrentAccountDto implements CurrentAccount {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
-  @ApiProperty()
-  email!: string;
+  @ApiProperty({ type: String, nullable: true })
+  email!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  dni!: string | null;
 
   @ApiProperty()
   fullName!: string;
