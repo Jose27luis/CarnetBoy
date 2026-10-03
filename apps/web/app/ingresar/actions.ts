@@ -18,7 +18,7 @@ async function restartIfNeeded(code: string): Promise<void> {
 export async function loginAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const result = await requestJson<LoginStep>('/v1/auth/login', {
     method: 'POST',
-    body: { email: formText(formData, 'email'), password: formData.get('password') ?? '' },
+    body: { identifier: formText(formData, 'identifier'), password: formData.get('password') ?? '' },
     clientIp: await currentClientIp(),
   });
 
