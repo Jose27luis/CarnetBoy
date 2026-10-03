@@ -2,12 +2,13 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   type AuthTokens,
   type CurrentAccount,
+  DNI_PATTERN,
   type LoginStep,
   type Role,
   STAFF_ROLES,
   type TotpEnrollment,
 } from '@carnet/contracts';
-import type { Account } from '@prisma/client';
+import type { Account, Prisma } from '@prisma/client';
 import { DomainError } from '../../../common/errors/domain-error';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type { Tx } from '../../../infrastructure/prisma/transaction';
@@ -21,8 +22,14 @@ import { LoginChallengeService, type LoginChallengeStage } from './login-challen
 export const MAX_FAILED_ATTEMPTS = 5;
 export const LOCK_DURATION_MS = 15 * 60 * 1000;
 
-export function toCurrentAccount(account: Pick<Account, 'id' | 'email' | 'fullName' | 'role'>): CurrentAccount {
-  return { id: account.id, email: account.email, fullName: account.fullName, role: account.role };
+export function toCurrentAccount(account: Pick<Account, 'id' | 'email' | 'dni' | 'fullName' | 'role'>): CurrentAccount {
+  return { id: account.id, email: account.email, dni: account.dni, fullName: account.fullName, role: account.role };
+}
+
+function loginWhere(identifier: string): Prisma.AccountWhereUniqueInput {
+  const trimmed = identifier.trim();
+
+  return DNI_PATTERN.test(trimmed) ? { dni: trimmed } : { email: normalizeEmail(trimmed) };
 }
 
 function requiresTotp(role: Role): boolean {
@@ -40,8 +47,8 @@ export class LoginService {
     private readonly audit: AuditService,
   ) {}
 
-  async login(email: string, password: string, ip: string, now: Date = new Date()): Promise<LoginStep> {
-    const account = await this.prisma.account.findUnique({ where: { email: normalizeEmail(email) } });
+  async login(identifier: string, password: string, ip: string, now: Date = new Date()): Promise<LoginStep> {
+    const account = await this.prisma.account.findUnique({ where: loginWhere(identifier) });
 
     if (account === null) {
       await this.passwords.spendDecoyVerification(password);
@@ -105,7 +112,7 @@ export class LoginService {
       data: { totpSecretEncrypted: this.totp.encrypt(secret), totpLastTimeStep: null },
     });
 
-    return { secret, qrSvg: await this.totp.qrSvg(account.email, secret) };
+    return { secret, qrSvg: await this.totp.qrSvg(account.email ?? account.fullName, secret) };
   }
 
   async verifyTotp(challengeToken: string, code: string, ip: string, now: Date = new Date()): Promise<LoginStep> {
@@ -194,7 +201,7 @@ export class LoginService {
   }
 
   private async challengedAccount(challengeToken: string, stages: readonly LoginChallengeStage[], now: Date): Promise<Account> {
-    const accountId = this.challenges.accountFor(challengeToken, stages);
+    const accountId = this.challenges.subjectFor(challengeToken, stages);
     const account = await this.prisma.account.findUnique({ where: { id: accountId } });
 
     if (account === null) {
