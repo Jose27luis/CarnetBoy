@@ -1,4 +1,14 @@
-import type { AccountStatus, AppointmentType, CatalogKind, CatalogStatus, Role } from '@carnet/contracts';
+import type {
+  AccountStatus,
+  AppointmentType,
+  CatalogKind,
+  CatalogStatus,
+  DeliveryType,
+  LinkStatus,
+  Relationship,
+  Role,
+  Sex,
+} from '@carnet/contracts';
 
 export const ROLE_LABEL: Record<Role, string> = {
   ADMIN: 'Admin',
@@ -122,4 +132,66 @@ export function describeAgeInDays(days: number): string {
 
 export function describeAgeRange(minMonths: number, maxMonths: number): string {
   return `${minMonths} a ${maxMonths} meses`;
+}
+
+export const SEX_LABEL: Record<Sex, string> = {
+  FEMALE: 'Niña',
+  MALE: 'Niño',
+};
+
+export const DELIVERY_TYPE_LABEL: Record<DeliveryType, string> = {
+  VAGINAL: 'Vaginal',
+  CESAREAN: 'Cesárea',
+};
+
+export const RELATIONSHIP_LABEL: Record<Relationship, string> = {
+  MOTHER: 'Madre',
+  FATHER: 'Padre',
+  OTHER: 'Otro apoderado',
+};
+
+export const LINK_STATUS_LABEL: Record<LinkStatus, string> = {
+  PENDING: 'Pendiente de activación',
+  ACTIVE: 'Activo',
+  EXPIRED: 'Código vencido',
+  REVOKED: 'Revocado',
+};
+
+export const LINK_STATUS_TONE: Record<LinkStatus, 'celeste' | 'ok' | 'warn' | 'danger' | 'neutral'> = {
+  PENDING: 'celeste',
+  ACTIVE: 'ok',
+  EXPIRED: 'warn',
+  REVOKED: 'neutral',
+};
+
+export function personName(person: { givenNames: string; paternalSurname: string; maternalSurname: string }): string {
+  return `${person.givenNames} ${person.paternalSurname} ${person.maternalSurname}`;
+}
+
+export function childDocument(child: { dni: string | null; cnv: string | null }): string {
+  return child.dni === null ? `CNV ${child.cnv ?? ''}` : `DNI ${child.dni}`;
+}
+
+export function describeAgeFrom(birthDate: string, today: string): string {
+  const [birthYear = 0, birthMonth = 1, birthDay = 1] = birthDate.split('-').map(Number);
+  const [year = 0, month = 1, day = 1] = today.split('-').map(Number);
+  const totalMonths = (year - birthYear) * 12 + (month - birthMonth) - (day < birthDay ? 1 : 0);
+
+  if (totalMonths < 1) {
+    const days = Math.round((Date.UTC(year, month - 1, day) - Date.UTC(birthYear, birthMonth - 1, birthDay)) / 86_400_000);
+    return days === 1 ? '1 día' : `${days} días`;
+  }
+
+  if (totalMonths < 24) {
+    return totalMonths === 1 ? '1 mes' : `${totalMonths} meses`;
+  }
+
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  return months === 0 ? `${years} años` : `${years} años y ${months} ${months === 1 ? 'mes' : 'meses'}`;
+}
+
+export function todayInLima(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date());
 }
