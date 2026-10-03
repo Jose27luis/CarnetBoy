@@ -34,9 +34,33 @@ enum AppointmentType {
   HEMOGLOBIN_TEST
 }
 
+enum Sex {
+  FEMALE
+  MALE
+}
+
+enum DeliveryType {
+  VAGINAL
+  CESAREAN
+}
+
+enum Relationship {
+  MOTHER
+  FATHER
+  OTHER
+}
+
+enum LinkStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
 model Account {
   id                     String        @id @default(uuid()) @db.Uuid
-  email                  String        @unique @db.VarChar(254)
+  email                  String?       @unique @db.VarChar(254)
+  dni                    String?       @unique @db.Char(8)
   fullName               String        @map("full_name") @db.VarChar(160)
   role                   Role
   status                 AccountStatus @default(ACTIVE)
@@ -58,6 +82,11 @@ model Account {
   catalogVersions     CatalogVersion[]
   auditEvents         AuditEvent[]
   idempotencyKeys     IdempotencyKey[]
+  childrenCreated     Child[]
+  guardian            Guardian?
+  linksCreated        GuardianLink[]       @relation("LinkCreatedBy")
+  linksRevoked        GuardianLink[]       @relation("LinkRevokedBy")
+  activationCodes     ActivationCode[]
 
   @@map("accounts")
 }
@@ -87,7 +116,9 @@ model Facility {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  assignments FacilityAssignment[]
+  assignments     FacilityAssignment[]
+  childrenCreated Child[]
+  links           GuardianLink[]
 
   @@map("facilities")
 }
@@ -223,4 +254,110 @@ model IdempotencyKey {
   @@id([accountId, key])
   @@index([expiresAt])
   @@map("idempotency_keys")
+}
+
+model Child {
+  id                  String   @id @default(uuid()) @db.Uuid
+  dni                 String?  @unique @db.Char(8)
+  cnv                 String?  @unique @db.VarChar(12)
+  givenNames          String   @map("given_names") @db.VarChar(120)
+  paternalSurname     String   @map("paternal_surname") @db.VarChar(80)
+  maternalSurname     String   @map("maternal_surname") @db.VarChar(80)
+  sex                 Sex
+  birthDate           DateTime @map("birth_date") @db.Date
+  gestationalWeeks    Int?     @map("gestational_weeks")
+  bloodType           String?  @map("blood_type") @db.VarChar(3)
+  createdById         String   @map("created_by_id") @db.Uuid
+  createdAtFacilityId String   @map("created_at_facility_id") @db.Uuid
+  version             Int      @default(1)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  createdBy         Account        @relation(fields: [createdById], references: [id])
+  createdAtFacility Facility       @relation(fields: [createdAtFacilityId], references: [id])
+  birthRecord       BirthRecord?
+  links             GuardianLink[]
+
+  @@map("children")
+}
+
+model BirthRecord {
+  childId             String        @id @map("child_id") @db.Uuid
+  birthPlace          String?       @map("birth_place") @db.VarChar(160)
+  deliveryType        DeliveryType? @map("delivery_type")
+  weightGrams         Int?          @map("weight_grams")
+  lengthCm            Decimal?      @map("length_cm") @db.Decimal(4, 1)
+  headCircumferenceCm Decimal?      @map("head_circumference_cm") @db.Decimal(4, 1)
+  apgar1              Int?          @map("apgar_1")
+  apgar5              Int?          @map("apgar_5")
+
+  child Child @relation(fields: [childId], references: [id])
+
+  @@map("birth_records")
+}
+
+model Guardian {
+  id              String   @id @default(uuid()) @db.Uuid
+  dni             String   @unique @db.Char(8)
+  givenNames      String   @map("given_names") @db.VarChar(120)
+  paternalSurname String   @map("paternal_surname") @db.VarChar(80)
+  maternalSurname String   @map("maternal_surname") @db.VarChar(80)
+  phone           String?  @db.VarChar(15)
+  email           String?  @db.VarChar(254)
+  accountId       String?  @unique @map("account_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  account Account?       @relation(fields: [accountId], references: [id])
+  links   GuardianLink[]
+
+  @@map("guardians")
+}
+
+model GuardianLink {
+  id                 String       @id @default(uuid()) @db.Uuid
+  childId            String       @map("child_id") @db.Uuid
+  guardianId         String       @map("guardian_id") @db.Uuid
+  relationship       Relationship
+  status             LinkStatus
+  consentVersion     String       @map("consent_version") @db.VarChar(16)
+  consentAt          DateTime     @map("consent_at") @db.Timestamptz(3)
+  createdById        String       @map("created_by_id") @db.Uuid
+  facilityId         String       @map("facility_id") @db.Uuid
+  revokedById        String?      @map("revoked_by_id") @db.Uuid
+  revokedAt          DateTime?    @map("revoked_at") @db.Timestamptz(3)
+  revocationReason   String?      @map("revocation_reason") @db.VarChar(500)
+  revocationDocument String?      @map("revocation_document") @db.VarChar(160)
+  version            Int          @default(1)
+  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  child           Child            @relation(fields: [childId], references: [id])
+  guardian        Guardian         @relation(fields: [guardianId], references: [id])
+  createdBy       Account          @relation("LinkCreatedBy", fields: [createdById], references: [id])
+  revokedBy       Account?         @relation("LinkRevokedBy", fields: [revokedById], references: [id])
+  facility        Facility         @relation(fields: [facilityId], references: [id])
+  activationCodes ActivationCode[]
+
+  @@index([childId])
+  @@index([guardianId])
+  @@map("guardian_links")
+}
+
+model ActivationCode {
+  id         String    @id @default(uuid()) @db.Uuid
+  linkId     String    @map("link_id") @db.Uuid
+  codeHash   String    @map("code_hash") @db.Char(64)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt     DateTime? @map("used_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  issuedById String    @map("issued_by_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  link     GuardianLink @relation(fields: [linkId], references: [id])
+  issuedBy Account      @relation(fields: [issuedById], references: [id])
+
+  @@index([linkId])
+  @@index([codeHash], map: "activation_codes_hash_idx")
+  @@map("activation_codes")
 }
