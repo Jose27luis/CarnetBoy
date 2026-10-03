@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import type { Facility, FacilityAssignmentItem } from '@carnet/contracts';
+import type { DigitizerFacility, Facility, FacilityAssignmentItem } from '@carnet/contracts';
 import type { Facility as FacilityRow } from '@prisma/client';
 import { DomainError } from '../../common/errors/domain-error';
 import type { AuthenticatedUser } from '../../infrastructure/auth/authenticated-user';
@@ -202,5 +202,24 @@ export class FacilitiesService {
         ip,
       });
     });
+  }
+
+  async facilitiesOf(accountId: string): Promise<DigitizerFacility[]> {
+    const rows = await this.prisma.facilityAssignment.findMany({
+      where: { accountId, endedAt: null, facility: { active: true } },
+      include: { facility: { select: { id: true, name: true, ipressCode: true } } },
+      orderBy: { facility: { name: 'asc' } },
+    });
+
+    return rows.map((row) => row.facility);
+  }
+
+  async isAssigned(accountId: string, facilityId: string): Promise<boolean> {
+    const assignment = await this.prisma.facilityAssignment.findFirst({
+      where: { accountId, facilityId, endedAt: null, facility: { active: true } },
+      select: { id: true },
+    });
+
+    return assignment !== null;
   }
 }
