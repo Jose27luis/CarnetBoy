@@ -12,6 +12,7 @@ export interface ApiRequest {
   token?: string | null;
   clientIp?: string | null;
   idempotencyKey?: string;
+  facilityId?: string;
 }
 
 const errorSchema = z.object({
@@ -43,6 +44,10 @@ async function send(path: string, request: ApiRequest): Promise<Response | null>
 
   if (request.idempotencyKey) {
     headers['idempotency-key'] = request.idempotencyKey;
+  }
+
+  if (request.facilityId) {
+    headers['x-facility-id'] = request.facilityId;
   }
 
   try {
