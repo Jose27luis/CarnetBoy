@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
+import { GuardianAccountsService } from './accounts/guardian-accounts.service';
 import { StaffAccountsService } from './accounts/staff-accounts.service';
 import { AuthController } from './auth.controller';
 import { PasswordHasher } from './credentials/password-hasher';
@@ -12,7 +13,15 @@ import { TotpService } from './totp/totp.service';
 @Module({
   imports: [AuditModule],
   controllers: [AuthController, StaffAccountsController],
-  providers: [PasswordHasher, TotpService, LoginChallengeService, LoginService, SessionService, StaffAccountsService],
-  exports: [StaffAccountsService, PasswordHasher],
+  providers: [
+    PasswordHasher,
+    TotpService,
+    LoginChallengeService,
+    LoginService,
+    SessionService,
+    StaffAccountsService,
+    GuardianAccountsService,
+  ],
+  exports: [StaffAccountsService, GuardianAccountsService, LoginChallengeService, PasswordHasher],
 })
 export class IdentityModule {}
