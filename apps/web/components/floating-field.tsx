@@ -67,6 +67,9 @@ interface FloatingInputProps {
   error?: string | undefined;
   maxLength?: number;
   pattern?: string;
+  required?: boolean;
+  initialValue?: string;
+  autoCapitalize?: 'none' | 'characters';
 }
 
 export function FloatingInput({
@@ -79,8 +82,11 @@ export function FloatingInput({
   error,
   maxLength,
   pattern,
+  required = true,
+  initialValue = '',
+  autoCapitalize,
 }: FloatingInputProps): React.JSX.Element {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(initialValue);
 
   return (
     <FloatingFrame label={label} help={help} error={error} filled={value.length > 0}>
@@ -93,7 +99,8 @@ export function FloatingInput({
           autoComplete={autoComplete}
           maxLength={maxLength}
           pattern={pattern}
-          required
+          required={required}
+          autoCapitalize={autoCapitalize}
           value={value}
           onChange={(event) => setValue(event.target.value)}
           aria-invalid={error ? true : undefined}
