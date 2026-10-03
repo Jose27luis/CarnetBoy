@@ -41,6 +41,7 @@ describe('cuentas del personal', () => {
     expect(body.account.email).toBe('nuevo.digitador@prueba.pe');
 
     const firstLogin = await login(context, body.account.email, body.temporaryPassword);
+    expect(firstLogin.statusCode).toBe(200);
     expect(firstLogin.json<{ step: string }>().step).toBe('PASSWORD_CHANGE_REQUIRED');
 
     const duplicated = await request(context, {
