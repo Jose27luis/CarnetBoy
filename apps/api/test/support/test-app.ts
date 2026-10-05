@@ -7,7 +7,7 @@ import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import { generateSecret, generateSync } from 'otplib';
 import { AppModule } from '../../src/app.module';
 import { ENV } from '../../src/config/env.module';
-import type { Env } from '../../src/config/env';
+import { type Env, loadEnv } from '../../src/config/env';
 import { configureApp } from '../../src/configure-app';
 import { PrismaService } from '../../src/infrastructure/prisma/prisma.service';
 import { ARGON2_OPTIONS } from '../../src/modules/identity/credentials/argon2-options';
@@ -33,8 +33,11 @@ export interface SignedInAccount extends TestAccount {
   refreshToken: string;
 }
 
-export async function createTestApp(): Promise<TestContext> {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+export async function createTestApp(envOverrides: Partial<Env> = {}): Promise<TestContext> {
+  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(ENV)
+    .useValue({ ...loadEnv(), ...envOverrides })
+    .compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ trustProxy: true }));
   const env = app.get<Env>(ENV);
 
