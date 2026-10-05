@@ -24,4 +24,17 @@ describe('env', () => {
   it('rechaza una clave de cifrado del segundo factor que no tenga 32 bytes', () => {
     expect(() => loadEnv({ ...BASE, TOTP_ENCRYPTION_KEY: Buffer.alloc(16, 7).toString('base64') })).toThrow(/TOTP_ENCRYPTION_KEY/);
   });
+
+  it('no exige el administrador inicial y trata los valores vacíos como ausentes', () => {
+    const env = loadEnv({ ...BASE, BOOTSTRAP_ADMIN_EMAIL: '', BOOTSTRAP_ADMIN_PASSWORD: '' });
+
+    expect(env.BOOTSTRAP_ADMIN_EMAIL).toBeUndefined();
+  });
+
+  it('exige el correo y la contraseña del administrador inicial juntos', () => {
+    expect(() => loadEnv({ ...BASE, BOOTSTRAP_ADMIN_EMAIL: 'admin@ejemplo.pe' })).toThrow(/BOOTSTRAP_ADMIN_PASSWORD/);
+    expect(() => loadEnv({ ...BASE, BOOTSTRAP_ADMIN_EMAIL: 'admin@ejemplo.pe', BOOTSTRAP_ADMIN_PASSWORD: 'corta' })).toThrow(
+      /BOOTSTRAP_ADMIN_PASSWORD/,
+    );
+  });
 });
