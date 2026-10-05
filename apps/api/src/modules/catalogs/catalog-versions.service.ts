@@ -1,5 +1,12 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import type { AppointmentType, CatalogKind, CatalogVersion, CatalogVersionDetail } from '@carnet/contracts';
+import { type AltitudeAdjustment, findAltitudeGaps, type HemoglobinThresholdRow } from '@carnet/clinical';
+import {
+  ALTITUDE_TABLE_TOP_METERS,
+  type AppointmentType,
+  type CatalogKind,
+  type CatalogVersion,
+  type CatalogVersionDetail,
+} from '@carnet/contracts';
 import { Prisma, type CatalogVersion as CatalogVersionRow } from '@prisma/client';
 import { z } from 'zod';
 import { DomainError } from '../../common/errors/domain-error';
@@ -53,9 +60,41 @@ const ENTRY_RELATION: Record<CatalogKind, EntryRelation> = {
 
 const versionReferenceSchema = z.object({ id: z.uuid() });
 
+export interface ScheduleDoseInForce {
+  id: string;
+  vaccineId: string;
+  vaccineCode: string;
+  vaccineName: string;
+  prevents: string;
+  doseNumber: number;
+  recommendedAgeDays: number;
+  maxAgeDays: number;
+}
+
+export interface ScheduleInForce {
+  id: string;
+  norm: string;
+  validFrom: string;
+  doses: ScheduleDoseInForce[];
+}
+
+export interface AnemiaReference {
+  id: string;
+  norm: string;
+  thresholds: HemoglobinThresholdRow[];
+  adjustments: AltitudeAdjustment[];
+}
+
+export interface NewAltitudeAdjustment {
+  minAltitude: number;
+  maxAltitude: number;
+  subtract: string;
+}
+
 const detailInclude = {
   scheduledDoses: { include: { vaccine: true }, orderBy: [{ recommendedAgeDays: 'asc' }, { doseNumber: 'asc' }] },
   hemoglobinThresholds: { orderBy: { minAgeMonths: 'asc' } },
+  altitudeAdjustments: { orderBy: { minAltitude: 'asc' } },
   appointmentIntervals: { orderBy: [{ appointmentType: 'asc' }, { minAgeMonths: 'asc' }] },
   _count: { select: { scheduledDoses: true, hemoglobinThresholds: true, appointmentIntervals: true } },
 } satisfies Prisma.CatalogVersionInclude;
@@ -94,6 +133,12 @@ function toDetail(row: DetailRow): CatalogVersionDetail {
       normalFrom: threshold.normalFrom.toFixed(1),
       mildFrom: threshold.mildFrom.toFixed(1),
       moderateFrom: threshold.moderateFrom.toFixed(1),
+    })),
+    altitudeAdjustments: row.altitudeAdjustments.map((adjustment) => ({
+      id: adjustment.id,
+      minAltitude: adjustment.minAltitude,
+      maxAltitude: adjustment.maxAltitude,
+      subtract: adjustment.subtract.toFixed(1),
     })),
     intervals: row.appointmentIntervals.map((interval) => ({
       id: interval.id,
@@ -279,15 +324,54 @@ export class CatalogVersionsService {
     });
   }
 
+  addAltitudeAdjustment(
+    actor: AuthenticatedUser,
+    versionId: string,
+    adjustment: NewAltitudeAdjustment,
+    expectedVersion: number,
+    ip: string,
+  ): Promise<CatalogVersionDetail> {
+    if (adjustment.maxAltitude < adjustment.minAltitude) {
+      throw DomainError.validation({ maxAltitude: ['La altitud máxima no puede ser menor que la mínima.'] });
+    }
+
+    return this.changeDraft(actor, versionId, expectedVersion, ip, 'catalog_version.entry_added', async (tx, draft) => {
+      this.ensureKind(draft, 'HEMOGLOBIN_THRESHOLDS');
+      const existing = await tx.hemoglobinAltitudeAdjustment.findMany({ where: { catalogVersionId: draft.id } });
+
+      if (existing.some((entry) => adjustment.minAltitude <= entry.maxAltitude && entry.minAltitude <= adjustment.maxAltitude)) {
+        throw DomainError.conflict('CATALOG_RANGE_OVERLAP', 'El tramo de altitud se cruza con otro tramo de esta versión.');
+      }
+
+      await tx.hemoglobinAltitudeAdjustment.create({
+        data: {
+          catalogVersionId: draft.id,
+          minAltitude: adjustment.minAltitude,
+          maxAltitude: adjustment.maxAltitude,
+          subtract: new Prisma.Decimal(adjustment.subtract),
+        },
+      });
+
+      return { after: adjustment };
+    });
+  }
+
   removeEntry(actor: AuthenticatedUser, versionId: string, entryId: string, expectedVersion: number, ip: string): Promise<CatalogVersionDetail> {
     return this.changeDraft(actor, versionId, expectedVersion, ip, 'catalog_version.entry_removed', async (tx, draft) => {
       const where = { id: entryId, catalogVersionId: draft.id };
-      const removed =
-        draft.kind === 'VACCINATION_SCHEDULE'
-          ? await tx.scheduledDose.deleteMany({ where })
-          : draft.kind === 'HEMOGLOBIN_THRESHOLDS'
-            ? await tx.hemoglobinThreshold.deleteMany({ where })
-            : await tx.appointmentInterval.deleteMany({ where });
+      let removed: Prisma.BatchPayload;
+
+      if (draft.kind === 'VACCINATION_SCHEDULE') {
+        removed = await tx.scheduledDose.deleteMany({ where });
+      } else if (draft.kind === 'HEMOGLOBIN_THRESHOLDS') {
+        removed = await tx.hemoglobinThreshold.deleteMany({ where });
+
+        if (removed.count === 0) {
+          removed = await tx.hemoglobinAltitudeAdjustment.deleteMany({ where });
+        }
+      } else {
+        removed = await tx.appointmentInterval.deleteMany({ where });
+      }
 
       if (removed.count === 0) {
         throw DomainError.notFound('La entrada no existe en esta versión.');
@@ -310,6 +394,10 @@ export class CatalogVersionsService {
 
         if (entries._count[ENTRY_RELATION[draft.kind]] === 0) {
           throw DomainError.unprocessable('CATALOG_EMPTY', 'No se puede publicar una versión sin entradas.');
+        }
+
+        if (draft.kind === 'HEMOGLOBIN_THRESHOLDS') {
+          await this.ensureCompleteAltitudeTable(tx, draft.id);
         }
 
         const [current] = await tx.$queryRaw<{ id: string; valid_from: Date }[]>`
@@ -432,6 +520,10 @@ export class CatalogVersionsService {
           moderateFrom,
         })),
       });
+      const adjustments = await tx.hemoglobinAltitudeAdjustment.findMany({ where: { catalogVersionId: source.id } });
+      await tx.hemoglobinAltitudeAdjustment.createMany({
+        data: adjustments.map(({ minAltitude, maxAltitude, subtract }) => ({ catalogVersionId: targetId, minAltitude, maxAltitude, subtract })),
+      });
     } else {
       const intervals = await tx.appointmentInterval.findMany({ where: { catalogVersionId: source.id } });
       await tx.appointmentInterval.createMany({
@@ -456,5 +548,76 @@ export class CatalogVersionsService {
     if (maxAgeMonths < minAgeMonths) {
       throw DomainError.validation({ maxAgeMonths: ['La edad máxima no puede ser menor que la edad mínima.'] });
     }
+  }
+
+  private async ensureCompleteAltitudeTable(tx: Tx, versionId: string): Promise<void> {
+    const rows = await tx.hemoglobinAltitudeAdjustment.findMany({ where: { catalogVersionId: versionId } });
+
+    if (rows.length === 0) {
+      throw DomainError.unprocessable('CATALOG_EMPTY', 'Agrega la tabla de ajuste por altitud antes de publicar.');
+    }
+
+    const problems = findAltitudeGaps(
+      rows.map((row) => ({ minAltitude: row.minAltitude, maxAltitude: row.maxAltitude, subtract: row.subtract.toNumber() })),
+      0,
+      ALTITUDE_TABLE_TOP_METERS,
+    );
+
+    if (problems.length > 0) {
+      throw DomainError.unprocessable('ALTITUDE_TABLE_INCOMPLETE', `La tabla de ajuste por altitud está incompleta. ${problems.join(' ')}`);
+    }
+  }
+
+  async scheduleInForce(date: string): Promise<ScheduleInForce | null> {
+    const versionId = await this.versionInForce('VACCINATION_SCHEDULE', date);
+
+    if (versionId === null) {
+      return null;
+    }
+
+    const row = await this.prisma.catalogVersion.findUniqueOrThrow({ where: { id: versionId }, include: detailInclude });
+
+    return {
+      id: row.id,
+      norm: row.norm,
+      validFrom: fromDateColumn(row.validFrom) ?? date,
+      doses: row.scheduledDoses.map((dose) => ({
+        id: dose.id,
+        vaccineId: dose.vaccineId,
+        vaccineCode: dose.vaccine.code,
+        vaccineName: dose.vaccine.name,
+        prevents: dose.vaccine.prevents,
+        doseNumber: dose.doseNumber,
+        recommendedAgeDays: dose.recommendedAgeDays,
+        maxAgeDays: dose.maxAgeDays,
+      })),
+    };
+  }
+
+  async anemiaReferenceInForce(date: string): Promise<AnemiaReference | null> {
+    const versionId = await this.versionInForce('HEMOGLOBIN_THRESHOLDS', date);
+
+    if (versionId === null) {
+      return null;
+    }
+
+    const row = await this.prisma.catalogVersion.findUniqueOrThrow({ where: { id: versionId }, include: detailInclude });
+
+    return {
+      id: row.id,
+      norm: row.norm,
+      thresholds: row.hemoglobinThresholds.map((threshold) => ({
+        minAgeMonths: threshold.minAgeMonths,
+        maxAgeMonths: threshold.maxAgeMonths,
+        normalFrom: threshold.normalFrom.toNumber(),
+        mildFrom: threshold.mildFrom.toNumber(),
+        moderateFrom: threshold.moderateFrom.toNumber(),
+      })),
+      adjustments: row.altitudeAdjustments.map((adjustment) => ({
+        minAltitude: adjustment.minAltitude,
+        maxAltitude: adjustment.maxAltitude,
+        subtract: adjustment.subtract.toNumber(),
+      })),
+    };
   }
 }
