@@ -6,6 +6,7 @@ import type { AuthenticatedUser } from '../../infrastructure/auth/authenticated-
 import { ClientIp, CurrentUser } from '../../infrastructure/auth/current-user.decorator';
 import { IdempotencyKey } from '../../infrastructure/idempotency/idempotency-key.decorator';
 import {
+  AddAltitudeAdjustmentDto,
   AddAppointmentIntervalDto,
   AddHemoglobinThresholdDto,
   AddScheduledDoseDto,
@@ -100,6 +101,21 @@ export class CatalogVersionsController {
     const { expectedVersion, ...threshold } = body;
 
     return this.versions.addThreshold(actor, id, threshold, expectedVersion, ip);
+  }
+
+  @Post(':id/altitude-adjustments')
+  @ApiOperation({ summary: 'Agrega un tramo de ajuste de hemoglobina por altitud al borrador' })
+  @ApiResponse({ status: 201, type: CatalogVersionDetailDto })
+  @ApiResponse({ status: 409, type: ApiErrorDto, description: 'CATALOG_RANGE_OVERLAP, CATALOG_NOT_DRAFT o VERSION_CONFLICT' })
+  addAltitudeAdjustment(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: AddAltitudeAdjustmentDto,
+    @ClientIp() ip: string,
+  ): Promise<CatalogVersionDetailDto> {
+    const { expectedVersion, ...adjustment } = body;
+
+    return this.versions.addAltitudeAdjustment(actor, id, adjustment, expectedVersion, ip);
   }
 
   @Post(':id/appointment-intervals')
