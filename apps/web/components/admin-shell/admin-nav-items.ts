@@ -3,6 +3,7 @@ import {
   CalendarClock,
   ClipboardList,
   Droplet,
+  FilePenLine,
   LayoutDashboard,
   Link2,
   type LucideIcon,
@@ -46,7 +47,10 @@ export const ADMIN_NAV: readonly NavGroup[] = [
   },
   {
     title: 'Control',
-    items: [{ href: '/admin/auditoria', label: 'Auditoría', icon: ScrollText }],
+    items: [
+      { href: '/admin/correcciones', label: 'Correcciones', icon: FilePenLine },
+      { href: '/admin/auditoria', label: 'Auditoría', icon: ScrollText },
+    ],
   },
 ];
 
