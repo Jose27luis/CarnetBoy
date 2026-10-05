@@ -2,7 +2,7 @@
 
 import type { Facility } from '@carnet/contracts';
 import { settle } from '@/lib/admin-action';
-import { type FormState, formInteger, formText } from '@/lib/form-state';
+import { type FormState, formInteger, formText, formValues } from '@/lib/form-state';
 import { api } from '@/lib/session';
 
 const PATH = '/admin/establecimientos';
@@ -18,7 +18,7 @@ export async function createFacilityAction(_previous: FormState, formData: FormD
     },
   });
 
-  return settle(result, PATH, 'Establecimiento registrado.');
+  return settle(result, PATH, 'Establecimiento registrado.', { values: formValues(formData) });
 }
 
 export async function updateFacilityAction(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -33,7 +33,7 @@ export async function updateFacilityAction(_previous: FormState, formData: FormD
     },
   });
 
-  return settle(result, PATH, 'Cambios guardados.');
+  return settle(result, PATH, 'Cambios guardados.', { values: formValues(formData) });
 }
 
 export async function toggleFacilityAction(_previous: FormState, formData: FormData): Promise<FormState> {
