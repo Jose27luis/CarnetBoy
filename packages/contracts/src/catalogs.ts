@@ -54,8 +54,18 @@ export interface AppointmentInterval {
   intervalDays: number;
 }
 
+export interface HemoglobinAltitudeAdjustment {
+  id: string;
+  minAltitude: number;
+  maxAltitude: number;
+  subtract: string;
+}
+
+export const ALTITUDE_TABLE_TOP_METERS = 4999;
+
 export interface CatalogVersionDetail extends CatalogVersion {
   doses: ScheduledDose[];
   thresholds: HemoglobinThreshold[];
+  altitudeAdjustments: HemoglobinAltitudeAdjustment[];
   intervals: AppointmentInterval[];
 }
