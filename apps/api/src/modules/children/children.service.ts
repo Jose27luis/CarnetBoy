@@ -1,8 +1,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { parseCalendarDate } from '@carnet/clinical';
+import { type CalendarDate, parseCalendarDate } from '@carnet/clinical';
 import type { BloodType, ChildRecord, ChildSummary, DeliveryType, Sex } from '@carnet/contracts';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { todayInLima } from '../../common/clinical/record-meta';
 import { DomainError } from '../../common/errors/domain-error';
 import type { AuthenticatedUser } from '../../infrastructure/auth/authenticated-user';
 import { IdempotencyService } from '../../infrastructure/idempotency/idempotency.service';
@@ -45,6 +46,14 @@ export interface ChildChanges extends ChildIdentityInput {
   expectedVersion: number;
 }
 
+export interface ChildBasics {
+  id: string;
+  fullName: string;
+  sex: Sex;
+  birthDate: CalendarDate;
+  gestationalWeeks: number | null;
+}
+
 export interface ActorContext {
   actor: AuthenticatedUser;
   facilityId: string;
@@ -52,10 +61,6 @@ export interface ActorContext {
 }
 
 const childReferenceSchema = z.object({ id: z.uuid() });
-
-function todayInLima(now: Date): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(now);
-}
 
 function documentTaken(): DomainError {
   return DomainError.conflict('CHILD_DOCUMENT_TAKEN', 'Ya hay un niño registrado con ese DNI o CNV. Búscalo para abrir su ficha.');
@@ -199,6 +204,25 @@ export class ChildrenService {
 
       throw error;
     }
+  }
+
+  async basics(childId: string): Promise<ChildBasics> {
+    const child = await this.prisma.child.findUnique({
+      where: { id: childId },
+      select: { id: true, givenNames: true, paternalSurname: true, maternalSurname: true, sex: true, birthDate: true, gestationalWeeks: true },
+    });
+
+    if (child === null) {
+      throw DomainError.notFound('El niño no existe.');
+    }
+
+    return {
+      id: child.id,
+      fullName: `${child.givenNames} ${child.paternalSurname} ${child.maternalSurname}`,
+      sex: child.sex,
+      birthDate: parseCalendarDate(child.birthDate.toISOString().slice(0, 10)),
+      gestationalWeeks: child.gestationalWeeks,
+    };
   }
 
   async load(tx: Tx, childId: string): Promise<ChildRecord> {
