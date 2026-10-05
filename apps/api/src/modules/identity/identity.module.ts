@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
+import { AdminBootstrapService } from './accounts/admin-bootstrap.service';
 import { GuardianAccountsService } from './accounts/guardian-accounts.service';
 import { StaffAccountsService } from './accounts/staff-accounts.service';
 import { AuthController } from './auth.controller';
@@ -21,6 +22,7 @@ import { TotpService } from './totp/totp.service';
     SessionService,
     StaffAccountsService,
     GuardianAccountsService,
+    AdminBootstrapService,
   ],
   exports: [StaffAccountsService, GuardianAccountsService, LoginChallengeService, PasswordHasher],
 })
