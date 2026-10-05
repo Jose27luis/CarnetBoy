@@ -18,7 +18,7 @@ import {
 import { api, loadOrFail } from '@/lib/session';
 import { PANEL_CLASS } from '@/lib/ui';
 import { removeEntryAction } from '../actions';
-import { DoseForm, IntervalForm, NormForm, PublishForm, ThresholdForm, type VersionRef } from './entry-forms';
+import { AltitudeForm, DoseForm, IntervalForm, NormForm, PublishForm, ThresholdForm, type VersionRef } from './entry-forms';
 
 export const metadata: Metadata = { title: 'Versión de catálogo' };
 
@@ -158,6 +158,67 @@ function EntriesTable({
   );
 }
 
+function AltitudeSection({
+  detail,
+  reference,
+  editable,
+}: {
+  detail: CatalogVersionDetail;
+  reference: VersionRef;
+  editable: boolean;
+}): React.JSX.Element {
+  return (
+    <section aria-labelledby="altitude" className={`${PANEL_CLASS} mb-6 overflow-hidden`}>
+      <div className="border-b border-line px-5 py-4">
+        <h2 id="altitude" className="text-lg font-semibold">
+          Ajuste por altitud
+        </h2>
+        <p className="text-sm text-muted">
+          Lo que se resta a la hemoglobina observada según la altitud del establecimiento. Para publicar, los tramos deben cubrir de 0 a 4999 m sin
+          huecos.
+        </p>
+      </div>
+      {detail.altitudeAdjustments.length === 0 ? (
+        <div className="p-5">
+          <EmptyState title="Sin tramos de altitud">Agrega los tramos de la norma antes de publicar.</EmptyState>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[480px] text-sm">
+            <thead className="border-b border-line bg-celeste-50">
+              <tr>
+                <th className={TH_CLASS}>Altitud</th>
+                <th className={TH_CLASS}>Restar</th>
+                {editable ? <th className={TH_CLASS}>Acción</th> : null}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {detail.altitudeAdjustments.map((adjustment) => (
+                <tr key={adjustment.id}>
+                  <td className={TD_CLASS}>
+                    {adjustment.minAltitude} a {adjustment.maxAltitude} m s. n. m.
+                  </td>
+                  <td className={TD_CLASS}>{adjustment.subtract} g/dL</td>
+                  {editable ? (
+                    <td className={TD_CLASS}>
+                      <RemoveEntry reference={reference} entryId={adjustment.id} label={`el tramo de ${adjustment.minAltitude} a ${adjustment.maxAltitude} m`} />
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {editable ? (
+        <div className="border-t border-line p-5">
+          <AltitudeForm reference={reference} />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function AddEntry({ section, reference, vaccines }: { section: CatalogSection; reference: VersionRef; vaccines: Vaccine[] }): React.JSX.Element {
   if (section.kind === 'VACCINATION_SCHEDULE') {
     return vaccines.length === 0 ? (
@@ -237,6 +298,8 @@ export default async function CatalogVersionPage({ params }: VersionPageProps): 
           </div>
         )}
       </section>
+
+      {version.kind === 'HEMOGLOBIN_THRESHOLDS' ? <AltitudeSection detail={version} reference={reference} editable={editable} /> : null}
 
       {editable ? (
         <div className="flex flex-col gap-6">
