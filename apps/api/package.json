@@ -9,7 +9,8 @@
     "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
     "lint": "prisma generate && eslint src test",
     "test": "prisma generate && NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
-    "create-admin": "node dist/scripts/create-admin.js"
+    "create-admin": "node dist/scripts/create-admin.js",
+    "create-catalog-drafts": "node dist/scripts/create-catalog-drafts.js"
   },
   "dependencies": {
     "@carnet/clinical": "workspace:*",
