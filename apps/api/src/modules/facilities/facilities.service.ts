@@ -214,6 +214,16 @@ export class FacilitiesService {
     return rows.map((row) => row.facility);
   }
 
+  async altitudeOf(facilityId: string): Promise<number> {
+    const facility = await this.prisma.facility.findUnique({ where: { id: facilityId }, select: { altitudeMeters: true } });
+
+    if (facility === null) {
+      throw DomainError.notFound('El establecimiento no existe.');
+    }
+
+    return facility.altitudeMeters;
+  }
+
   async isAssigned(accountId: string, facilityId: string): Promise<boolean> {
     const assignment = await this.prisma.facilityAssignment.findFirst({
       where: { accountId, facilityId, endedAt: null, facility: { active: true } },
