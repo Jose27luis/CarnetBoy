@@ -25,6 +25,12 @@ describe('env', () => {
     expect(() => loadEnv({ ...BASE, TOTP_ENCRYPTION_KEY: Buffer.alloc(16, 7).toString('base64') })).toThrow(/TOTP_ENCRYPTION_KEY/);
   });
 
+  it('exige el segundo factor si no se indica lo contrario', () => {
+    expect(loadEnv(BASE).TOTP_REQUIRED).toBe(true);
+    expect(loadEnv({ ...BASE, TOTP_REQUIRED: 'false' }).TOTP_REQUIRED).toBe(false);
+    expect(() => loadEnv({ ...BASE, TOTP_REQUIRED: 'no' })).toThrow(/TOTP_REQUIRED/);
+  });
+
   it('no exige el administrador inicial y trata los valores vacíos como ausentes', () => {
     const env = loadEnv({ ...BASE, BOOTSTRAP_ADMIN_EMAIL: '', BOOTSTRAP_ADMIN_PASSWORD: '' });
 
