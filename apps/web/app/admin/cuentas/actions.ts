@@ -28,7 +28,7 @@ export async function createAccountAction(_previous: FormState, formData: FormDa
     result,
     PATH,
     'Cuenta creada. Entrega esta contraseña temporal a la persona; solo se muestra ahora y la cambiará al ingresar.',
-    (data) => data.temporaryPassword,
+    { secretOf: (data) => data.temporaryPassword },
   );
 }
 
@@ -51,7 +51,7 @@ export async function resetPasswordAction(_previous: FormState, formData: FormDa
     method: 'POST',
   });
 
-  return settle(result, PATH, 'Contraseña temporal nueva. Solo se muestra ahora:', (data) => data.temporaryPassword);
+  return settle(result, PATH, 'Contraseña temporal nueva. Solo se muestra ahora:', { secretOf: (data) => data.temporaryPassword });
 }
 
 export async function assignFacilityAction(_previous: FormState, formData: FormData): Promise<FormState> {
