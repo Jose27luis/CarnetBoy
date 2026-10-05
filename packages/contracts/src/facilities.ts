@@ -12,6 +12,12 @@ export interface Facility {
   version: number;
 }
 
+export interface FacilityActivity {
+  facilityId: string;
+  childrenRegistered: number;
+  linksCreated: number;
+}
+
 export interface FacilityAssignmentItem {
   accountId: string;
   facilityId: string;
