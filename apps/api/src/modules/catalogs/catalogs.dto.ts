@@ -9,6 +9,7 @@ import {
   type CatalogStatus,
   type CatalogVersion,
   type CatalogVersionDetail,
+  type HemoglobinAltitudeAdjustment,
   type HemoglobinThreshold,
   MAX_AGE_DAYS,
   MAX_AGE_MONTHS,
@@ -137,6 +138,24 @@ export class AddHemoglobinThresholdDto extends ExpectedVersionDto {
   moderateFrom!: string;
 }
 
+export class AddAltitudeAdjustmentDto extends ExpectedVersionDto {
+  @ApiProperty({ minimum: 0, maximum: 6000, example: 3000 })
+  @IsInt()
+  @Min(0)
+  @Max(6000)
+  minAltitude!: number;
+
+  @ApiProperty({ minimum: 0, maximum: 6000, example: 3499 })
+  @IsInt()
+  @Min(0)
+  @Max(6000)
+  maxAltitude!: number;
+
+  @ApiProperty({ example: '2.1', description: 'g/dL que se restan a la hemoglobina observada' })
+  @Matches(/^\d(\.\d)?$/, { message: 'Usa un valor en g/dL con un decimal, por ejemplo 2.1.' })
+  subtract!: string;
+}
+
 export class AddAppointmentIntervalDto extends ExpectedVersionDto {
   @ApiProperty({ enum: APPOINTMENT_TYPES })
   @IsIn(APPOINTMENT_TYPES)
@@ -249,6 +268,20 @@ class HemoglobinThresholdDto implements HemoglobinThreshold {
   moderateFrom!: string;
 }
 
+class AltitudeAdjustmentDto implements HemoglobinAltitudeAdjustment {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty()
+  minAltitude!: number;
+
+  @ApiProperty()
+  maxAltitude!: number;
+
+  @ApiProperty({ example: '2.1' })
+  subtract!: string;
+}
+
 class AppointmentIntervalDto implements AppointmentInterval {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -272,6 +305,9 @@ export class CatalogVersionDetailDto extends CatalogVersionDto implements Catalo
 
   @ApiProperty({ type: [HemoglobinThresholdDto] })
   thresholds!: HemoglobinThresholdDto[];
+
+  @ApiProperty({ type: [AltitudeAdjustmentDto] })
+  altitudeAdjustments!: AltitudeAdjustmentDto[];
 
   @ApiProperty({ type: [AppointmentIntervalDto] })
   intervals!: AppointmentIntervalDto[];
