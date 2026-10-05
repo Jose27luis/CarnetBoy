@@ -12,10 +12,12 @@
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src",
-    "test": "jest"
+    "test": "jest",
+    "import:who": "node scripts/import-who-tables.mts"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "exceljs": "^4.4.0",
     "jest": "^30.5.2",
     "ts-jest": "^29.4.14",
     "typescript": "^5.9.3"
