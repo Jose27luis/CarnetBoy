@@ -1,4 +1,4 @@
-import type { ApiErrorBody, ChildRecord, LinkCreated } from '@carnet/contracts';
+import type { ApiErrorBody, ChildRecord, FacilityActivity, LinkCreated } from '@carnet/contracts';
 import { CONSENT_VERSION } from '@carnet/contracts';
 import {
   createAccount,
@@ -175,5 +175,31 @@ describe('niños y vínculos', () => {
 
     expect(response.json<LinkCreated>().link.status).toBe('ACTIVE');
     expect(response.json<LinkCreated>().activationCode).toBeNull();
+  });
+
+  it('cuenta los niños y vínculos de cada establecimiento para el admin', async () => {
+    const field = await signInDigitizerAt(context);
+    const admin = await signInAs(context, 'ADMIN');
+    const child = (
+      await request(context, {
+        method: 'POST',
+        url: '/v1/children',
+        token: field.token,
+        headers: { ...field.headers, 'idempotency-key': idempotencyKey() },
+        payload: childPayload(),
+      })
+    ).json<ChildRecord>();
+    await request(context, {
+      method: 'POST',
+      url: `/v1/children/${child.id}/links`,
+      token: field.token,
+      headers: field.headers,
+      payload: linkPayload(randomDni()),
+    });
+
+    const response = await request(context, { method: 'GET', url: '/v1/admin/facility-activity', token: admin.token });
+    const activity = response.json<FacilityActivity[]>().find((item) => item.facilityId === field.facilityId);
+
+    expect(activity).toEqual({ facilityId: field.facilityId, childrenRegistered: 1, linksCreated: 1 });
   });
 });
