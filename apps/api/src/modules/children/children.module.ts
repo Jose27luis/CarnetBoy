@@ -26,5 +26,6 @@ import { LinksService } from './links.service';
     FacilityActivityController,
   ],
   providers: [ChildrenService, LinksService, ActivationService, GuardianChildrenService, FacilityActivityService],
+  exports: [ChildrenService],
 })
 export class ChildrenModule {}
