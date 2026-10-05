@@ -24,6 +24,10 @@ const envSchema = z
         message: `Debe ser una clave de ${TOTP_KEY_BYTES} bytes codificada en base64`,
       }),
     TOTP_ISSUER: z.string().min(1).max(40).default('Carnet CRED'),
+    TOTP_REQUIRED: z
+      .enum(['true', 'false'], { message: 'Usa true o false' })
+      .default('true')
+      .transform((value) => value === 'true'),
     BOOTSTRAP_ADMIN_EMAIL: optionalText.pipe(z.email().optional()),
     BOOTSTRAP_ADMIN_PASSWORD: optionalText.pipe(
       z.string().min(BOOTSTRAP_PASSWORD_MIN_LENGTH, `Debe tener al menos ${BOOTSTRAP_PASSWORD_MIN_LENGTH} caracteres`).optional(),
