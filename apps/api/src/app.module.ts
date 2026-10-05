@@ -7,7 +7,11 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { ThrottlingModule } from './infrastructure/throttling/throttling.module';
 import { UserOrIpThrottlerGuard } from './infrastructure/throttling/user-or-ip-throttler.guard';
+import { AnemiaModule } from './modules/anemia/anemia.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { CorrectionsModule } from './modules/corrections/corrections.module';
+import { GrowthModule } from './modules/growth/growth.module';
+import { ImmunizationModule } from './modules/immunization/immunization.module';
 import { CatalogsModule } from './modules/catalogs/catalogs.module';
 import { ChildrenModule } from './modules/children/children.module';
 import { FacilitiesModule } from './modules/facilities/facilities.module';
@@ -27,6 +31,10 @@ import { IdentityModule } from './modules/identity/identity.module';
     FacilitiesModule,
     CatalogsModule,
     ChildrenModule,
+    ImmunizationModule,
+    GrowthModule,
+    AnemiaModule,
+    CorrectionsModule,
   ],
   providers: [
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
