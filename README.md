@@ -279,7 +279,7 @@ flowchart LR
     subgraph SIS["Carnet CRED: área de administración"]
         direction TB
         A01(["CU-01 Iniciar sesión"]):::uc
-        A0F(["Verificar segundo factor"]):::inc
+        A0F(["Verificar segundo factor"]):::ext
         A02(["CU-02 Gestionar digitadores<br/>y admins"]):::uc
         A03(["CU-03 Gestionar establecimientos<br/>y su altitud"]):::uc
         A04(["CU-04 Publicar versión del<br/>esquema de vacunación"]):::uc
@@ -301,7 +301,7 @@ flowchart LR
     ADM --- A08
     ADM --- A09
 
-    A01 -.->|"«incluye»"| A0F
+    A0F -.->|"«extiende»<br/>si está activado"| A01
     A02 -.->|"«incluye»"| AUD
     A04 -.->|"«incluye»"| AUD
     A06 -.->|"«incluye»"| AUD
@@ -310,6 +310,7 @@ flowchart LR
     classDef actor fill:#1F6F8B,stroke:#123F50,color:#FFFFFF,font-weight:bold
     classDef uc fill:#EAF4F7,stroke:#1F6F8B,color:#0F2F3A
     classDef inc fill:#F4F4F5,stroke:#9CA3AF,color:#374151,stroke-dasharray:4 3
+    classDef ext fill:#FFF7E6,stroke:#C2850C,color:#5C3D00,stroke-dasharray:4 3
     style SIS fill:#FFFFFF,stroke:#1F6F8B,stroke-width:2px,color:#0F2F3A
 ```
 
@@ -322,7 +323,7 @@ flowchart LR
     subgraph SIS["Carnet CRED: área del digitador"]
         direction TB
         D01(["CU-01 Iniciar sesión"]):::uc
-        D0F(["Verificar segundo factor"]):::inc
+        D0F(["Verificar segundo factor"]):::ext
         D10(["CU-10 Buscar niño<br/>por DNI o CNV"]):::uc
         D11(["CU-11 Registrar niño y<br/>datos de nacimiento"]):::uc
         D12(["CU-12 Vincular apoderado"]):::uc
@@ -352,7 +353,7 @@ flowchart LR
     DIG --- D18
     DIG --- D19
 
-    D01 -.->|"«incluye»"| D0F
+    D0F -.->|"«extiende»<br/>si está activado"| D01
     D11 -.->|"«extiende»<br/>si no existe"| D10
     D12 -.->|"«incluye»"| D12a
     D12 -.->|"«incluye»"| D12b
