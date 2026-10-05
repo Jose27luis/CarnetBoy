@@ -81,6 +81,20 @@ export async function addThresholdAction(_previous: FormState, formData: FormDat
   return settle(result, versionPath(formData), 'Umbral agregado.');
 }
 
+export async function addAltitudeAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const result = await api<CatalogVersionDetail>(versionEndpoint(formData, '/altitude-adjustments'), {
+    method: 'POST',
+    body: {
+      minAltitude: formInteger(formData, 'minAltitude'),
+      maxAltitude: formInteger(formData, 'maxAltitude'),
+      subtract: formText(formData, 'subtract'),
+      expectedVersion: formInteger(formData, 'expectedVersion'),
+    },
+  });
+
+  return settle(result, versionPath(formData), 'Tramo de altitud agregado.');
+}
+
 export async function addIntervalAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const result = await api<CatalogVersionDetail>(versionEndpoint(formData, '/appointment-intervals'), {
     method: 'POST',
