@@ -145,3 +145,23 @@ describe('ingreso', () => {
     expect(response.json<{ email: string; role: string }>()).toMatchObject({ email: admin.identifier, role: 'ADMIN' });
   });
 });
+
+describe('ingreso con el segundo factor desactivado', () => {
+  let context: TestContext;
+
+  beforeAll(async () => {
+    context = await createTestApp({ TOTP_REQUIRED: false });
+  });
+
+  afterAll(async () => {
+    await context.app.close();
+  });
+
+  it('abre la sesión del admin solo con la contraseña', async () => {
+    const admin = await createAccount(context, 'ADMIN', { totpEnrolled: false });
+
+    const response = await login(context, admin.identifier);
+
+    expect(response.json<LoginStep>().step).toBe('AUTHENTICATED');
+  });
+});
