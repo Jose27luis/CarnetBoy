@@ -7,7 +7,7 @@ import { FormMessage } from '@/components/form-message';
 import { SubmitButton } from '@/components/submit-button';
 import { fieldError, type FormState, IDLE } from '@/lib/form-state';
 import { APPOINTMENT_TYPE_LABEL } from '@/lib/labels';
-import { addDoseAction, addIntervalAction, addThresholdAction, publishAction, updateNormAction } from '../actions';
+import { addAltitudeAction, addDoseAction, addIntervalAction, addThresholdAction, publishAction, updateNormAction } from '../actions';
 
 export interface VersionRef {
   slug: string;
@@ -141,6 +141,27 @@ export function ThresholdForm({ reference }: { reference: VersionRef }): React.J
             pattern="[0-9]{1,2}\.[0-9]"
             help="g/dL. Por debajo es severa."
             error={fieldError(state, 'moderateFrom')}
+          />
+        </div>
+      )}
+    </EntryForm>
+  );
+}
+
+export function AltitudeForm({ reference }: { reference: VersionRef }): React.JSX.Element {
+  return (
+    <EntryForm reference={reference} action={addAltitudeAction} submitLabel="Agregar tramo">
+      {(state) => (
+        <div className="grid gap-4 md:grid-cols-3">
+          <FormField label="Desde (m s. n. m.)" name="minAltitude" type="number" min={0} max={6000} error={fieldError(state, 'minAltitude')} />
+          <FormField label="Hasta (m s. n. m.)" name="maxAltitude" type="number" min={0} max={6000} error={fieldError(state, 'maxAltitude')} />
+          <FormField
+            label="Restar a la hemoglobina"
+            name="subtract"
+            inputMode="decimal"
+            pattern="[0-9](\.[0-9])?"
+            help="g/dL, por ejemplo 2.1"
+            error={fieldError(state, 'subtract')}
           />
         </div>
       )}
