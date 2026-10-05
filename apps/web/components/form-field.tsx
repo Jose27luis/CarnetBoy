@@ -44,8 +44,8 @@ interface FormFieldProps {
   inputMode?: 'text' | 'numeric' | 'decimal' | 'email';
   maxLength?: number;
   minLength?: number;
-  min?: number;
-  max?: number;
+  min?: number | string;
+  max?: number | string;
   step?: string;
   pattern?: string;
   required?: boolean;
