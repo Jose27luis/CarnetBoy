@@ -4,3 +4,4 @@ export * from './facilities';
 export * from './catalogs';
 export * from './audit';
 export * from './children';
+export * from './clinical';
