@@ -4,16 +4,21 @@ import { redirect } from 'next/navigation';
 import type { ApiResult } from './api-client';
 import { type FormState, fromApiError, success } from './form-state';
 
-export function settle<T>(result: ApiResult<T>, path: string, message: string, secretOf?: (data: T) => string): FormState {
+interface SettleOptions<T> {
+  secretOf?: (data: T) => string;
+  values?: Record<string, string>;
+}
+
+export function settle<T>(result: ApiResult<T>, path: string, message: string, options: SettleOptions<T> = {}): FormState {
   if (!result.ok) {
     if (result.status === 401) {
       redirect('/ingresar');
     }
 
-    return fromApiError(result.error);
+    return fromApiError(result.error, options.values);
   }
 
   revalidatePath(path);
 
-  return success(message, secretOf?.(result.data));
+  return success(message, options.secretOf?.(result.data));
 }
