@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import {
   type AuthTokens,
   type CurrentAccount,
@@ -10,6 +10,8 @@ import {
 } from '@carnet/contracts';
 import type { Account, Prisma } from '@prisma/client';
 import { DomainError } from '../../../common/errors/domain-error';
+import { ENV } from '../../../config/env.module';
+import type { Env } from '../../../config/env';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type { Tx } from '../../../infrastructure/prisma/transaction';
 import { AuditService } from '../../audit/audit.service';
@@ -32,13 +34,14 @@ function loginWhere(identifier: string): Prisma.AccountWhereUniqueInput {
   return DNI_PATTERN.test(trimmed) ? { dni: trimmed } : { email: normalizeEmail(trimmed) };
 }
 
-function requiresTotp(role: Role): boolean {
+function isStaff(role: Role): boolean {
   return (STAFF_ROLES as readonly Role[]).includes(role);
 }
 
 @Injectable()
 export class LoginService {
   constructor(
+    @Inject(ENV) private readonly env: Env,
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordHasher,
     private readonly totp: TotpService,
@@ -182,7 +185,7 @@ export class LoginService {
       return { step: 'PASSWORD_CHANGE_REQUIRED', ...this.challenges.issue(account.id, 'PASSWORD_CHANGE', now) };
     }
 
-    if (requiresTotp(account.role)) {
+    if (this.env.TOTP_REQUIRED && isStaff(account.role)) {
       return account.totpEnabledAt === null
         ? { step: 'TOTP_ENROLLMENT_REQUIRED', ...this.challenges.issue(account.id, 'TOTP_ENROLLMENT', now) }
         : { step: 'TOTP_REQUIRED', ...this.challenges.issue(account.id, 'TOTP', now) };
