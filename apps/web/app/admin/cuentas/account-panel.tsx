@@ -1,6 +1,6 @@
 'use client';
 
-import type { Facility, FacilityAssignmentItem, StaffAccount } from '@carnet/contracts';
+import { type Facility, type FacilityAssignmentItem, PASSWORD_MIN_LENGTH, type StaffAccount } from '@carnet/contracts';
 import { Settings2 } from 'lucide-react';
 import { useActionState, useCallback, useState } from 'react';
 import { ActionForm } from '@/components/action-form';
@@ -68,7 +68,7 @@ function SetPasswordForm({ accountId }: { accountId: string }): React.JSX.Elemen
   return (
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="accountId" value={accountId} />
-      <PasswordField label="Nueva contraseña" name="password" autoComplete="new-password" generator help="Mínimo 12 caracteres. Entrégala a la persona por un medio seguro." error={fieldError(state, 'password')} />
+      <PasswordField label="Nueva contraseña" name="password" autoComplete="new-password" generator help={`Mínimo ${PASSWORD_MIN_LENGTH} caracteres. Entrégala a la persona por un medio seguro.`} error={fieldError(state, 'password')} />
       <CheckboxField label="Pedir que la cambie en su siguiente ingreso" name="requirePasswordChange" />
       <FormMessage state={state} />
       <div>
@@ -84,7 +84,7 @@ function OwnPasswordForm(): React.JSX.Element {
   return (
     <form action={action} className="flex flex-col gap-4">
       <PasswordField label="Contraseña actual" name="currentPassword" autoComplete="current-password" error={fieldError(state, 'currentPassword')} />
-      <PasswordField label="Nueva contraseña" name="newPassword" autoComplete="new-password" generator help="Mínimo 12 caracteres." error={fieldError(state, 'newPassword')} />
+      <PasswordField label="Nueva contraseña" name="newPassword" autoComplete="new-password" generator help={`Mínimo ${PASSWORD_MIN_LENGTH} caracteres.`} error={fieldError(state, 'newPassword')} />
       <FormMessage state={state} />
       <div>
         <SubmitButton pendingLabel="Cambiando">Cambiar mi contraseña</SubmitButton>
