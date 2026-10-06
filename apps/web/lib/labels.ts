@@ -26,7 +26,7 @@ export const ROLE_LABEL: Record<Role, string> = {
 
 export const ACCOUNT_STATUS_LABEL: Record<AccountStatus, string> = {
   ACTIVE: 'Activa',
-  SUSPENDED: 'Suspendida',
+  SUSPENDED: 'Desactivada',
 };
 
 export const CATALOG_STATUS_LABEL: Record<CatalogStatus, string> = {
@@ -84,6 +84,8 @@ const AUDIT_ACTION_LABEL: Record<string, string> = {
   'account.totp_enrolled': 'activó la verificación en dos pasos',
   'account.totp_reset': 'reinició la verificación en dos pasos',
   'account.suspended': 'suspendió una cuenta',
+  'account.updated': 'editó los datos de una cuenta',
+  'account.password_set': 'definió la contraseña de una cuenta',
   'account.reactivated': 'reactivó una cuenta',
   'facility.created': 'registró un establecimiento',
   'facility.updated': 'modificó un establecimiento',
