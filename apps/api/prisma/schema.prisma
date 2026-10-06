@@ -50,6 +50,18 @@ enum Relationship {
   OTHER
 }
 
+enum AppointmentStatus {
+  SCHEDULED
+  ATTENDED
+  MISSED
+  CANCELLED
+}
+
+enum AppointmentOrigin {
+  DIGITIZER
+  SYSTEM
+}
+
 enum LinkStatus {
   PENDING
   ACTIVE
@@ -131,6 +143,8 @@ model Account {
   ironSupplies        IronSupply[]
   correctionsAsked    CorrectionRequest[]  @relation("CorrectionRequestedBy")
   correctionsResolved CorrectionRequest[]  @relation("CorrectionResolvedBy")
+  appointmentsCreated Appointment[]        @relation("AppointmentCreatedBy")
+  appointmentsClosed  Appointment[]        @relation("AppointmentClosedBy")
 
   @@map("accounts")
 }
@@ -167,6 +181,7 @@ model Facility {
   growthChecks      GrowthCheck[]
   hemoglobinTests   HemoglobinTest[]
   ironSupplies      IronSupply[]
+  appointments      Appointment[]
 
   @@map("facilities")
 }
@@ -334,6 +349,7 @@ model Child {
   hemoglobinTests   HemoglobinTest[]
   ironSupplies      IronSupply[]
   corrections       CorrectionRequest[]
+  appointments      Appointment[]
 
   @@map("children")
 }
@@ -575,4 +591,32 @@ model CorrectionRequest {
   @@index([status, requestedAt])
   @@index([childId, status])
   @@map("correction_requests")
+}
+
+model Appointment {
+  id                    String            @id @default(uuid()) @db.Uuid
+  childId               String            @map("child_id") @db.Uuid
+  facilityId            String            @map("facility_id") @db.Uuid
+  type                  AppointmentType
+  scheduledOn           DateTime          @map("scheduled_on") @db.Date
+  status                AppointmentStatus @default(SCHEDULED)
+  origin                AppointmentOrigin
+  note                  String?           @db.VarChar(200)
+  createdById           String            @map("created_by_id") @db.Uuid
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  closedById            String?           @map("closed_by_id") @db.Uuid
+  closedAt              DateTime?         @map("closed_at") @db.Timestamptz(3)
+  cancelReason          String?           @map("cancel_reason") @db.VarChar(200)
+  reminderSentAt        DateTime?         @map("reminder_sent_at") @db.Timestamptz(3)
+  sameDayReminderSentAt DateTime?         @map("same_day_reminder_sent_at") @db.Timestamptz(3)
+  version               Int               @default(1)
+
+  child     Child    @relation(fields: [childId], references: [id])
+  facility  Facility @relation(fields: [facilityId], references: [id])
+  createdBy Account  @relation("AppointmentCreatedBy", fields: [createdById], references: [id])
+  closedBy  Account? @relation("AppointmentClosedBy", fields: [closedById], references: [id])
+
+  @@index([facilityId, scheduledOn])
+  @@index([childId, status])
+  @@map("appointments")
 }
