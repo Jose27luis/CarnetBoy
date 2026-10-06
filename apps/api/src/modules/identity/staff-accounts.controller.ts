@@ -1,11 +1,18 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiErrorDto } from '../../common/swagger/api-error.dto';
 import { RequireRoles } from '../../infrastructure/auth/auth-metadata';
 import type { AuthenticatedUser } from '../../infrastructure/auth/authenticated-user';
 import { ClientIp, CurrentUser } from '../../infrastructure/auth/current-user.decorator';
 import { StaffAccountsService } from './accounts/staff-accounts.service';
-import { CreateStaffAccountDto, StaffAccountCreatedDto, StaffAccountDto, TemporaryPasswordDto } from './dto/staff-accounts.dto';
+import {
+  CreateStaffAccountDto,
+  SetPasswordDto,
+  StaffAccountCreatedDto,
+  StaffAccountDto,
+  TemporaryPasswordDto,
+  UpdateStaffAccountDto,
+} from './dto/staff-accounts.dto';
 
 @ApiTags('accounts')
 @ApiBearerAuth()
@@ -33,6 +40,35 @@ export class StaffAccountsController {
     @ClientIp() ip: string,
   ): Promise<StaffAccountCreatedDto> {
     return this.accounts.create(actor, body, ip);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Cambia nombre, correo o rol; el propio rol no se puede cambiar' })
+  @ApiResponse({ status: 200, type: StaffAccountDto })
+  @ApiResponse({ status: 404, type: ApiErrorDto })
+  @ApiResponse({ status: 409, type: ApiErrorDto, description: 'EMAIL_TAKEN, CANNOT_CHANGE_OWN_ACCOUNT o LAST_ACTIVE_ADMIN' })
+  update(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateStaffAccountDto,
+    @ClientIp() ip: string,
+  ): Promise<StaffAccountDto> {
+    return this.accounts.update(actor, id, body, ip);
+  }
+
+  @Post(':id/password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Define la contraseña de otra cuenta, la desbloquea y cierra sus sesiones' })
+  @ApiResponse({ status: 200, type: StaffAccountDto })
+  @ApiResponse({ status: 404, type: ApiErrorDto })
+  @ApiResponse({ status: 409, type: ApiErrorDto, description: 'CANNOT_CHANGE_OWN_ACCOUNT' })
+  setPassword(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: SetPasswordDto,
+    @ClientIp() ip: string,
+  ): Promise<StaffAccountDto> {
+    return this.accounts.setPassword(actor, id, body, ip);
   }
 
   @Post(':id/suspend')
