@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { type AltitudeAdjustment, findAltitudeGaps, type HemoglobinThresholdRow } from '@carnet/clinical';
+import { type AltitudeAdjustment, findAltitudeGaps, type HemoglobinThresholdRow, type IntervalRow } from '@carnet/clinical';
 import {
   ALTITUDE_TABLE_TOP_METERS,
   type AppointmentType,
@@ -592,6 +592,19 @@ export class CatalogVersionsService {
         maxAgeDays: dose.maxAgeDays,
       })),
     };
+  }
+
+  async intervalsInForce(date: string): Promise<IntervalRow[] | null> {
+    const versionId = await this.versionInForce('APPOINTMENT_INTERVALS', date);
+
+    if (versionId === null) {
+      return null;
+    }
+
+    return this.prisma.appointmentInterval.findMany({
+      where: { catalogVersionId: versionId },
+      select: { appointmentType: true, minAgeMonths: true, maxAgeMonths: true, intervalDays: true },
+    });
   }
 
   async anemiaReferenceInForce(date: string): Promise<AnemiaReference | null> {
