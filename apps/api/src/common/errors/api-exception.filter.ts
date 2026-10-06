@@ -1,6 +1,7 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import type { ApiErrorBody, ErrorCode } from '@carnet/contracts';
 import type { FastifyReply } from 'fastify';
+import { isCheckViolation } from '../../infrastructure/prisma/check-violation';
 import { isTransientDatabaseError } from '../../infrastructure/prisma/transient-error';
 import { DomainError } from './domain-error';
 
@@ -49,6 +50,15 @@ export class ApiExceptionFilter implements ExceptionFilter {
       if (code !== undefined) {
         return { status, body: { code, message: MESSAGE_BY_CODE[code] ?? exception.message } };
       }
+    }
+
+    if (isCheckViolation(exception)) {
+      this.logger.warn(`Dato rechazado por una restricción: ${exception instanceof Error ? exception.message : String(exception)}`);
+
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        body: { code: 'VALIDATION_FAILED', message: 'Algún dato está fuera del rango permitido. Revisa los valores e inténtalo de nuevo.' },
+      };
     }
 
     if (isTransientDatabaseError(exception)) {
