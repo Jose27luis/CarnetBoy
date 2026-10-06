@@ -102,6 +102,13 @@ describe('niños y vínculos', () => {
     expect(withoutDocument.json<ApiErrorBody>().code).toBe('CHILD_DOCUMENT_REQUIRED');
   });
 
+  it('rechaza medidas al nacer fuera de rango con el campo señalado', async () => {
+    const response = await registerChild({ ...childPayload(), birth: { lengthCm: '49.5', headCircumferenceCm: '50.0' } });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json<ApiErrorBody>().fields).toEqual({ 'birth.headCircumferenceCm': ['El perímetro cefálico al nacer va de 18 a 45 cm.'] });
+  });
+
   it('encuentra al niño por DNI o CNV y deja la lectura de la ficha en la auditoría', async () => {
     const cnv = `10${randomDni()}`;
     const child = (await registerChild({ ...childPayload(), cnv })).json<ChildRecord>();
