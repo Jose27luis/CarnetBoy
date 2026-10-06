@@ -7,7 +7,7 @@ export type StaffRole = (typeof STAFF_ROLES)[number];
 export const ACCOUNT_STATUSES = ['ACTIVE', 'SUSPENDED'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
-export const PASSWORD_MIN_LENGTH = 12;
+export const PASSWORD_MIN_LENGTH = 8;
 export const GUARDIAN_PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
 export const TOTP_CODE_PATTERN = /^\d{6}$/;
