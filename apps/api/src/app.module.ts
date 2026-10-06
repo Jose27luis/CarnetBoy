@@ -17,6 +17,7 @@ import { ChildrenModule } from './modules/children/children.module';
 import { FacilitiesModule } from './modules/facilities/facilities.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
+import { ScheduleModule } from './modules/schedule/schedule.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { IdentityModule } from './modules/identity/identity.module';
     GrowthModule,
     AnemiaModule,
     CorrectionsModule,
+    ScheduleModule,
   ],
   providers: [
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
