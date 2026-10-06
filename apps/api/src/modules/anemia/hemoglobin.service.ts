@@ -1,8 +1,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { adjustHemoglobin, ageInCompletedMonths, classifyAnemia } from '@carnet/clinical';
+import { adjustHemoglobin, ageInCompletedMonths, classifyAnemia, parseCalendarDate } from '@carnet/clinical';
 import type { HemoglobinTestRecord } from '@carnet/contracts';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { markAppointmentAttended } from '../../common/clinical/appointment-attendance';
 import type { ClinicalRecordHandler, RecordSnapshot, Supersession } from '../../common/clinical/record-handler';
 import { validRecordDate } from '../../common/clinical/record-date';
 import { dateColumn, RECORD_META_INCLUDE, toRecordMeta } from '../../common/clinical/record-meta';
@@ -83,6 +84,7 @@ export class HemoglobinService implements ClinicalRecordHandler {
           const created = await tx.hemoglobinTest.create({
             data: { ...derived, childId, facilityId: context.facilityId, recordedById: context.actor.id, recordedAt: now },
           });
+          await markAppointmentAttended(tx, { childId, type: 'HEMOGLOBIN_TEST', attendedOn: parseCalendarDate(input.testedOn), actorId: context.actor.id, now });
           await this.audit.record(tx, {
             actorId: context.actor.id,
             action: 'hemoglobin_test.recorded',
