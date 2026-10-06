@@ -12,10 +12,20 @@ import { generateTemporaryPassword } from '../credentials/temporary-password';
 import { normalizeEmail } from '../credentials/email';
 import { SessionService } from '../sessions/session.service';
 
-export interface NewStaffAccount {
+export interface StaffAccountData {
   email: string;
   fullName: string;
   role: StaffRole;
+}
+
+export interface NewStaffAccount extends StaffAccountData {
+  password?: string;
+  requirePasswordChange?: boolean;
+}
+
+export interface PasswordAssignment {
+  password: string;
+  requirePasswordChange: boolean;
 }
 
 type StaffAccountRow = Account & { role: StaffRole; email: string };
@@ -37,6 +47,10 @@ export function toStaffAccount(account: StaffAccountRow, now: Date = new Date())
     lockedUntil: account.lockedUntil?.toISOString() ?? null,
     createdAt: account.createdAt.toISOString(),
   };
+}
+
+function emailTaken(): DomainError {
+  return DomainError.conflict('EMAIL_TAKEN', 'Ya existe una cuenta con ese correo.');
 }
 
 function snapshot(account: Account): Record<string, unknown> {
@@ -71,8 +85,9 @@ export class StaffAccountsService {
   }
 
   async create(actor: AuthenticatedUser, input: NewStaffAccount, ip: string): Promise<StaffAccountCreated> {
-    const temporaryPassword = generateTemporaryPassword();
-    const passwordHash = await this.passwords.hash(temporaryPassword);
+    const chosenPassword = input.password;
+    const password = chosenPassword ?? generateTemporaryPassword();
+    const passwordHash = await this.passwords.hash(password);
 
     try {
       const account = await this.prisma.$transaction(async (tx) => {
@@ -82,7 +97,7 @@ export class StaffAccountsService {
             fullName: input.fullName.trim(),
             role: input.role,
             passwordHash,
-            passwordChangeRequired: true,
+            passwordChangeRequired: chosenPassword === undefined || input.requirePasswordChange !== false,
           },
         });
         await this.audit.record(tx, {
@@ -97,14 +112,78 @@ export class StaffAccountsService {
         return created;
       });
 
-      return { account: toStaffAccount(this.requireStaff(account)), temporaryPassword };
+      return { account: toStaffAccount(this.requireStaff(account)), temporaryPassword: chosenPassword === undefined ? password : null };
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw DomainError.conflict('EMAIL_TAKEN', 'Ya existe una cuenta con ese correo.');
+        throw emailTaken();
       }
 
       throw error;
     }
+  }
+
+  async update(actor: AuthenticatedUser, accountId: string, input: StaffAccountData, ip: string): Promise<StaffAccount> {
+    try {
+      return await this.change(
+        actor,
+        accountId,
+        ip,
+        'account.updated',
+        async (tx, account) => {
+          if (input.role !== account.role) {
+            if (actor.id === account.id) {
+              throw DomainError.conflict('CANNOT_CHANGE_OWN_ACCOUNT', 'No puedes cambiar tu propio rol.');
+            }
+
+            if (account.role === 'ADMIN' && account.status === 'ACTIVE') {
+              await this.ensureAnotherActiveAdmin(tx, account.id);
+            }
+          }
+
+          return { email: normalizeEmail(input.email), fullName: input.fullName.trim(), role: input.role };
+        },
+        { allowSelf: true },
+      );
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw emailTaken();
+      }
+
+      throw error;
+    }
+  }
+
+  async setPassword(actor: AuthenticatedUser, accountId: string, input: PasswordAssignment, ip: string, now: Date = new Date()): Promise<StaffAccount> {
+    const passwordHash = await this.passwords.hash(input.password);
+
+    return this.change(actor, accountId, ip, 'account.password_set', async (tx, account) => {
+      await this.sessions.revokeAll(tx, account.id, now);
+
+      return { passwordHash, passwordChangeRequired: input.requirePasswordChange, failedAttempts: 0, lockedUntil: null };
+    });
+  }
+
+  async changeOwnPassword(actor: AuthenticatedUser, currentPassword: string, newPassword: string, ip: string): Promise<void> {
+    const account = await this.prisma.account.findUnique({ where: { id: actor.id } });
+
+    if (account === null || !isStaffAccount(account)) {
+      throw DomainError.notFound('La cuenta no existe.');
+    }
+
+    if (!(await this.passwords.verify(account.passwordHash, currentPassword))) {
+      throw DomainError.validation({ currentPassword: ['La contraseña actual no es correcta.'] });
+    }
+
+    if (await this.passwords.verify(account.passwordHash, newPassword)) {
+      throw DomainError.validation({ newPassword: ['La nueva contraseña debe ser distinta de la actual.'] });
+    }
+
+    const passwordHash = await this.passwords.hash(newPassword);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.account.update({ where: { id: account.id }, data: { passwordHash, passwordChangeRequired: false, version: { increment: 1 } } });
+      await this.audit.record(tx, { actorId: account.id, action: 'account.password_changed', entity: 'account', entityId: account.id, ip });
+    });
   }
 
   suspend(actor: AuthenticatedUser, accountId: string, ip: string, now: Date = new Date()): Promise<StaffAccount> {
@@ -156,8 +235,9 @@ export class StaffAccountsService {
     ip: string,
     action: string,
     decide: (tx: Tx, account: Account) => Promise<Prisma.AccountUpdateInput>,
+    options: { allowSelf?: boolean } = {},
   ): Promise<StaffAccount> {
-    if (actor.id === accountId) {
+    if (actor.id === accountId && options.allowSelf !== true) {
       throw DomainError.conflict('CANNOT_CHANGE_OWN_ACCOUNT', 'No puedes aplicar esta acción sobre tu propia cuenta.');
     }
 
