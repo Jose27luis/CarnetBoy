@@ -3,6 +3,7 @@ import { daysBetween, doseStatus, dateAtAge, isWithinDoseAge } from '@carnet/cli
 import type { AdministeredDoseRecord, ImmunizationStatus } from '@carnet/contracts';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { markAppointmentAttended } from '../../common/clinical/appointment-attendance';
 import type { ClinicalRecordHandler, RecordSnapshot, Supersession } from '../../common/clinical/record-handler';
 import { validRecordDate } from '../../common/clinical/record-date';
 import { dateColumn, RECORD_META_INCLUDE, todayInLima, toRecordMeta } from '../../common/clinical/record-meta';
@@ -144,6 +145,7 @@ export class ImmunizationService implements ClinicalRecordHandler {
                 recordedAt: now,
               },
             });
+            await markAppointmentAttended(tx, { childId, type: 'VACCINATION', attendedOn: administeredOn, actorId: context.actor.id, now });
             await this.audit.record(tx, {
               actorId: context.actor.id,
               action: 'dose.recorded',
