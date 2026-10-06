@@ -1,4 +1,12 @@
-import type { AnemiaOverview, ChildRecord, GrowthCheckRecord, GuardianLink, ImmunizationStatus, PendingCorrection } from '@carnet/contracts';
+import type {
+  AnemiaOverview,
+  ChildRecord,
+  ChildSchedule,
+  GrowthCheckRecord,
+  GuardianLink,
+  ImmunizationStatus,
+  PendingCorrection,
+} from '@carnet/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -21,6 +29,7 @@ import {
 } from '@/lib/labels';
 import { buttonClass, PANEL_CLASS } from '@/lib/ui';
 import { AnemiaSection } from './anemia-section';
+import { AppointmentsSection } from './appointments-section';
 import { CHILD_TABS, type ChildTab, ChildTabs } from './child-tabs';
 import { GrowthSection } from './growth-section';
 import { LinkGuardian } from './link-guardian';
@@ -53,6 +62,11 @@ async function loadSection<T>(path: string): Promise<T> {
 }
 
 async function ClinicalSection({ tab, child }: { tab: Exclude<ChildTab, 'datos'>; child: ChildRecord }): Promise<React.JSX.Element> {
+  if (tab === 'citas') {
+    const schedule = await loadSection<ChildSchedule>(`/v1/children/${child.id}/appointments`);
+    return <AppointmentsSection childId={child.id} schedule={schedule} />;
+  }
+
   const pending = await loadSection<PendingCorrection[]>(`/v1/children/${child.id}/corrections`);
   const pendingIds = new Set(pending.map((item) => item.recordId));
 
