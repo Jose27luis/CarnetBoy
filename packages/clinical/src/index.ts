@@ -4,3 +4,4 @@ export * from './who-tables';
 export * from './growth';
 export * from './anemia';
 export * from './immunization';
+export * from './schedule';
