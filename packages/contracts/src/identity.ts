@@ -58,7 +58,7 @@ export interface StaffAccount {
 
 export interface StaffAccountCreated {
   account: StaffAccount;
-  temporaryPassword: string;
+  temporaryPassword: string | null;
 }
 
 export interface TemporaryPasswordIssued {
