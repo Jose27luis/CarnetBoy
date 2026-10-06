@@ -2,17 +2,14 @@
 
 import { type ClinicalRecordType, IRON_PRODUCTS, IRON_PURPOSES, MEASUREMENT_POSITIONS } from '@carnet/contracts';
 import { PencilLine, Plus } from 'lucide-react';
-import { useActionState, useCallback, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { FormField, SelectField } from '@/components/form-field';
-import { FormMessage } from '@/components/form-message';
-import { SidePanel } from '@/components/side-panel';
-import { SubmitButton } from '@/components/submit-button';
-import { fieldError, type FormState, IDLE, submittedValue } from '@/lib/form-state';
+import { PanelForm, TextAreaField } from '@/components/panel-form';
+import { fieldError, type FormState, submittedValue } from '@/lib/form-state';
 import { daysBetween, describeScheduleAge, IRON_PRODUCT_LABEL, IRON_PURPOSE_LABEL, POSITION_LABEL, todayInLima } from '@/lib/labels';
 import { buttonClass, INPUT_CLASS } from '@/lib/ui';
 import { recordDoseAction, recordGrowthAction, recordHemoglobinAction, recordIronAction, requestCorrectionAction } from './clinical-actions';
 
-type Action = (previous: FormState, formData: FormData) => Promise<FormState>;
 type Defaults = Partial<Record<string, string>>;
 
 export interface DoseContext {
@@ -22,101 +19,8 @@ export interface DoseContext {
   lots: readonly string[];
 }
 
-interface PanelFormProps {
-  trigger: React.ReactNode;
-  triggerClassName: string;
-  title: string;
-  description?: string;
-  action: Action;
-  hidden: Record<string, string>;
-  submitLabel: string;
-  pendingLabel: string;
-  closeOnSuccess?: boolean;
-  children: (state: FormState) => React.ReactNode;
-}
-
-function PanelFormBody({
-  action,
-  hidden,
-  submitLabel,
-  pendingLabel,
-  closeOnSuccess,
-  onDone,
-  children,
-}: Omit<PanelFormProps, 'trigger' | 'triggerClassName' | 'title' | 'description'> & { onDone: () => void }): React.JSX.Element {
-  const [idempotencyKey] = useState(() => crypto.randomUUID().replaceAll('-', ''));
-  const [state, formAction] = useActionState(async (previous: FormState, formData: FormData) => {
-    const next = await action(previous, formData);
-
-    if (next.status === 'success' && closeOnSuccess === true) {
-      onDone();
-    }
-
-    return next;
-  }, IDLE);
-
-  return (
-    <form action={formAction} className="flex flex-col gap-5">
-      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
-      {Object.entries(hidden).map(([name, value]) => (
-        <input key={name} type="hidden" name={name} value={value} />
-      ))}
-      {state.status === 'success' ? null : children(state)}
-      <FormMessage state={state} />
-      {state.status === 'success' ? (
-        <button type="button" onClick={onDone} className={buttonClass('secondary')}>
-          Cerrar
-        </button>
-      ) : (
-        <SubmitButton pendingLabel={pendingLabel}>{submitLabel}</SubmitButton>
-      )}
-    </form>
-  );
-}
-
-function PanelForm({ trigger, triggerClassName, title, description, closeOnSuccess = true, ...body }: PanelFormProps): React.JSX.Element {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-
-  return (
-    <>
-      <button type="button" onClick={() => setOpen(true)} className={triggerClassName}>
-        {trigger}
-      </button>
-      <SidePanel open={open} title={title} {...(description === undefined ? {} : { description })} onClose={close}>
-        {open ? <PanelFormBody {...body} closeOnSuccess={closeOnSuccess} onDone={close} /> : null}
-      </SidePanel>
-    </>
-  );
-}
-
 function value(state: FormState, defaults: Defaults, field: string): string | undefined {
   return submittedValue(state, field, defaults[field]);
-}
-
-function TextArea({ label, name, error, defaultValue, help }: { label: string; name: string; error?: string | undefined; defaultValue?: string | undefined; help?: string }): React.JSX.Element {
-  const id = useId();
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold">
-        {label}
-      </label>
-      <textarea
-        id={id}
-        name={name}
-        required
-        minLength={5}
-        maxLength={300}
-        rows={3}
-        defaultValue={defaultValue}
-        aria-invalid={error ? true : undefined}
-        className={`${INPUT_CLASS} py-2`}
-      />
-      {help === undefined ? null : <p className="text-sm text-muted">{help}</p>}
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
-    </div>
-  );
 }
 
 function DoseFields({ state, defaults, dose }: { state: FormState; defaults: Defaults; dose: DoseContext }): React.JSX.Element {
@@ -177,7 +81,7 @@ function DoseFields({ state, defaults, dose }: { state: FormState; defaults: Def
             Con {describeScheduleAge(Math.max(ageDays, 0))} de edad esta dosis queda fuera del rango del esquema ({describeScheduleAge(dose.recommendedAgeDays)} a{' '}
             {describeScheduleAge(dose.maxAgeDays)}). Indica el motivo para registrarla.
           </p>
-          <TextArea label="Motivo" name="outOfRangeReason" defaultValue={value(state, defaults, 'outOfRangeReason')} error={fieldError(state, 'outOfRangeReason')} />
+          <TextAreaField label="Motivo" name="outOfRangeReason" defaultValue={value(state, defaults, 'outOfRangeReason')} error={fieldError(state, 'outOfRangeReason')} />
         </div>
       ) : null}
     </>
@@ -403,7 +307,7 @@ export function CorrectRecord({ childId, recordType, recordId, canCorrectDirectl
       {(state) => (
         <>
           <CorrectionFields state={state} recordType={recordType} {...fields} />
-          <TextArea label="Motivo de la corrección" name="reason" help="Queda registrado en la auditoría." defaultValue={submittedValue(state, 'reason', undefined)} error={fieldError(state, 'reason')} />
+          <TextAreaField label="Motivo de la corrección" name="reason" help="Queda registrado en la auditoría." defaultValue={submittedValue(state, 'reason', undefined)} error={fieldError(state, 'reason')} />
         </>
       )}
     </PanelForm>
