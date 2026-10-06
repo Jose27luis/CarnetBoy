@@ -1,6 +1,7 @@
 import type {
   AccountStatus,
   AnemiaClass,
+  AppointmentStatus,
   AppointmentType,
   CatalogKind,
   CatalogStatus,
@@ -106,6 +107,9 @@ const AUDIT_ACTION_LABEL: Record<string, string> = {
   'correction.requested': 'pidió corregir un registro',
   'correction.approved': 'aprobó una corrección',
   'correction.rejected': 'rechazó una corrección',
+  'appointment.scheduled': 'programó una cita',
+  'appointment.rescheduled': 'reprogramó una cita',
+  'appointment.closed': 'cerró una cita',
 };
 
 export function describeAuditAction(action: string): string {
@@ -237,6 +241,26 @@ export function describeScheduleAge(days: number): string {
 export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }
+
+export const APPOINTMENT_STATUS_LABEL: Record<AppointmentStatus, string> = {
+  SCHEDULED: 'Programada',
+  ATTENDED: 'Atendida',
+  MISSED: 'No asistió',
+  CANCELLED: 'Cancelada',
+};
+
+export const APPOINTMENT_STATUS_TONE: Record<AppointmentStatus, BadgeTone> = {
+  SCHEDULED: 'celeste',
+  ATTENDED: 'ok',
+  MISSED: 'danger',
+  CANCELLED: 'neutral',
+};
+
+export function formatLongDate(value: string): string {
+  return LONG_DATE_FORMAT.format(new Date(`${value}T12:00:00Z`));
+}
+
+const LONG_DATE_FORMAT = new Intl.DateTimeFormat('es-PE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Lima' });
 
 export const DOSE_STATUS_LABEL: Record<DoseStatus, string> = {
   FUTURE: 'Próxima',
