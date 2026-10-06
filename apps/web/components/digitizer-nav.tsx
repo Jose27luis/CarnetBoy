@@ -1,11 +1,12 @@
 'use client';
 
-import { Building2, Search, UserPlus } from 'lucide-react';
+import { Building2, CalendarDays, Search, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const ITEMS = [
   { href: '/digitador', label: 'Buscar niño', icon: Search, exact: true },
+  { href: '/digitador/agenda', label: 'Agenda', icon: CalendarDays, exact: true },
   { href: '/digitador/ninos/nuevo', label: 'Registrar niño', icon: UserPlus, exact: true },
   { href: '/digitador/establecimiento', label: 'Cambiar establecimiento', icon: Building2, exact: true },
 ] as const;
