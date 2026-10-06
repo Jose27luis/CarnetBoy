@@ -62,6 +62,26 @@ export interface ActorContext {
 
 const childReferenceSchema = z.object({ id: z.uuid() });
 
+function outside(value: string | undefined, min: number, max: number): boolean {
+  return value !== undefined && (Number(value) < min || Number(value) > max);
+}
+
+function validateBirthMeasures(birth: BirthInput | undefined): void {
+  const fields: Record<string, string[]> = {};
+
+  if (outside(birth?.lengthCm, 25, 65)) {
+    fields['birth.lengthCm'] = ['La talla al nacer va de 25 a 65 cm.'];
+  }
+
+  if (outside(birth?.headCircumferenceCm, 18, 45)) {
+    fields['birth.headCircumferenceCm'] = ['El perímetro cefálico al nacer va de 18 a 45 cm.'];
+  }
+
+  if (Object.keys(fields).length > 0) {
+    throw DomainError.validation(fields);
+  }
+}
+
 function documentTaken(): DomainError {
   return DomainError.conflict('CHILD_DOCUMENT_TAKEN', 'Ya hay un niño registrado con ese DNI o CNV. Búscalo para abrir su ficha.');
 }
@@ -108,6 +128,7 @@ export class ChildrenService {
 
   async register(context: ActorContext, input: NewChild, idempotencyKey: string, now: Date = new Date()): Promise<ChildRecord> {
     this.validateIdentity(input, now);
+    validateBirthMeasures(input.birth);
 
     try {
       return await this.idempotency.run(
@@ -166,6 +187,7 @@ export class ChildrenService {
 
   async update(context: ActorContext, childId: string, changes: ChildChanges, now: Date = new Date()): Promise<ChildRecord> {
     this.validateIdentity(changes, now);
+    validateBirthMeasures(changes.birth);
 
     try {
       return await this.prisma.$transaction(async (tx) => {
