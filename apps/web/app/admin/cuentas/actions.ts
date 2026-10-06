@@ -7,7 +7,7 @@ import { api, apiEmpty } from '@/lib/session';
 
 const PATH = '/admin/cuentas';
 const ACCOUNT_COMMANDS = {
-  suspend: 'La cuenta quedó suspendida y se cerraron sus sesiones.',
+  suspend: 'La cuenta quedó desactivada y se cerraron sus sesiones.',
   reactivate: 'La cuenta está activa otra vez.',
   'totp-reset': 'Se borró el segundo factor. La persona lo configurará en su siguiente ingreso.',
 } as const;
@@ -18,18 +18,61 @@ function isAccountCommand(value: string): value is AccountCommand {
   return value in ACCOUNT_COMMANDS;
 }
 
+function accountValues(formData: FormData): Record<string, string> {
+  return { fullName: formText(formData, 'fullName'), email: formText(formData, 'email'), role: formText(formData, 'role') };
+}
+
+function rawText(formData: FormData, name: string): string {
+  const value = formData.get(name);
+
+  return typeof value === 'string' ? value : '';
+}
+
 export async function createAccountAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const password = rawText(formData, 'password');
+  const values = accountValues(formData);
   const result = await api<StaffAccountCreated>('/v1/admin/accounts', {
     method: 'POST',
-    body: { email: formText(formData, 'email'), fullName: formText(formData, 'fullName'), role: formText(formData, 'role') },
+    body: { ...values, ...(password.length === 0 ? {} : { password, requirePasswordChange: formData.get('requirePasswordChange') === 'on' }) },
   });
+
+  if (result.ok && result.data.temporaryPassword === null) {
+    return settle(result, PATH, `Cuenta creada para ${result.data.account.email} con la contraseña que definiste.`);
+  }
 
   return settle(
     result,
     PATH,
     'Cuenta creada. Entrega esta contraseña temporal a la persona; solo se muestra ahora y la cambiará al ingresar.',
-    { secretOf: (data) => data.temporaryPassword },
+    { secretOf: (data) => data.temporaryPassword ?? '', values },
   );
+}
+
+export async function updateAccountAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const accountId = encodeURIComponent(formText(formData, 'accountId'));
+  const values = accountValues(formData);
+  const result = await api<StaffAccount>(`/v1/admin/accounts/${accountId}`, { method: 'PATCH', body: values });
+
+  return settle(result, PATH, 'Datos guardados.', { values });
+}
+
+export async function setPasswordAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const accountId = encodeURIComponent(formText(formData, 'accountId'));
+  const result = await api<StaffAccount>(`/v1/admin/accounts/${accountId}/password`, {
+    method: 'POST',
+    body: { password: rawText(formData, 'password'), requirePasswordChange: formData.get('requirePasswordChange') === 'on' },
+  });
+
+  return settle(result, PATH, 'Contraseña actualizada. Se cerraron sus sesiones abiertas.');
+}
+
+export async function changeOwnPasswordAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const result = await apiEmpty('/v1/account/password', {
+    method: 'POST',
+    body: { currentPassword: rawText(formData, 'currentPassword'), newPassword: rawText(formData, 'newPassword') },
+  });
+
+  return settle(result, PATH, 'Tu contraseña cambió.');
 }
 
 export async function accountCommandAction(_previous: FormState, formData: FormData): Promise<FormState> {
