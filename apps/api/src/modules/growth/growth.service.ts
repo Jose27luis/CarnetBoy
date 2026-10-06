@@ -1,8 +1,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { assessGrowth, correctedAgeDays, daysBetween, WHO_REFERENCE_VERSION } from '@carnet/clinical';
+import { assessGrowth, correctedAgeDays, daysBetween, parseCalendarDate, WHO_REFERENCE_VERSION } from '@carnet/clinical';
 import { WEIGHT_CHANGE_CONFIRMATION_RATIO, type GrowthCheckRecord, type MeasurementPosition } from '@carnet/contracts';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { markAppointmentAttended } from '../../common/clinical/appointment-attendance';
 import type { ClinicalRecordHandler, RecordSnapshot, Supersession } from '../../common/clinical/record-handler';
 import { validRecordDate } from '../../common/clinical/record-date';
 import { dateColumn, RECORD_META_INCLUDE, toRecordMeta } from '../../common/clinical/record-meta';
@@ -107,6 +108,7 @@ export class GrowthService implements ClinicalRecordHandler {
           const created = await tx.growthCheck.create({
             data: { ...derived, childId, facilityId: context.facilityId, recordedById: context.actor.id, recordedAt: now },
           });
+          await markAppointmentAttended(tx, { childId, type: 'GROWTH_CHECK', attendedOn: parseCalendarDate(input.measuredOn), actorId: context.actor.id, now });
           await this.audit.record(tx, {
             actorId: context.actor.id,
             action: 'growth_check.recorded',
