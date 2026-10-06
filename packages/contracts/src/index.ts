@@ -5,3 +5,4 @@ export * from './catalogs';
 export * from './audit';
 export * from './children';
 export * from './clinical';
+export * from './schedule';
