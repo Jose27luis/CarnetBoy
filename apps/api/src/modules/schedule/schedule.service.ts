@@ -21,6 +21,15 @@ export interface NewAppointment {
   note?: string;
 }
 
+export type ReminderTiming = 'ADVANCE' | 'SAME_DAY';
+
+export interface DueReminder {
+  appointment: Appointment;
+  timing: ReminderTiming;
+}
+
+export const REMINDER_DAYS_AHEAD = 3;
+
 export interface Closing {
   status: ClosingStatus;
   reason?: string;
@@ -92,6 +101,29 @@ export class ScheduleService {
       proposals,
       intervalsPublished: intervals !== null,
     };
+  }
+
+  async remindersDue(today: CalendarDate): Promise<DueReminder[]> {
+    const ahead = addDays(today, REMINDER_DAYS_AHEAD);
+    const rows = await this.prisma.appointment.findMany({
+      where: {
+        status: 'SCHEDULED',
+        OR: [
+          { scheduledOn: toDateColumn(ahead), reminderSentAt: null },
+          { scheduledOn: toDateColumn(today), sameDayReminderSentAt: null },
+        ],
+      },
+      include: APPOINTMENT_INCLUDE,
+    });
+
+    return rows.map((row) => ({ appointment: toAppointment(row), timing: dateColumn(row.scheduledOn) === today ? 'SAME_DAY' : 'ADVANCE' }));
+  }
+
+  async markReminded(appointmentId: string, timing: ReminderTiming, now: Date): Promise<void> {
+    await this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: timing === 'SAME_DAY' ? { sameDayReminderSentAt: now } : { reminderSentAt: now },
+    });
   }
 
   async upcoming(childId: string): Promise<Appointment[]> {
