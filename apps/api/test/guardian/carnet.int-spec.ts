@@ -85,6 +85,40 @@ describe('carnet del apoderado', () => {
     expect(body.nextStep.kind).toBeDefined();
     expect(carnet.body).not.toContain('recordedByName');
     expect(carnet.body).not.toContain('canCorrectDirectly');
+
+    const pdf = await request(context, { method: 'GET', url: `/v1/me/carnet/${child.id}/pdf`, token: guardian.token });
+
+    expect(pdf.statusCode).toBe(200);
+    expect(pdf.headers['content-type']).toBe('application/pdf');
+    expect(pdf.headers['content-disposition']).toContain('carnet-cred-lucia-apaza.pdf');
+    expect(pdf.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+  });
+
+  it('guarda la foto solo para el apoderado que la subió y rechaza archivos que no son imágenes', async () => {
+    const child = await registerChild();
+    const owner = await signInGuardian();
+    const other = await signInGuardian();
+    await linkGuardian(child.id, owner);
+    await linkGuardian(child.id, other);
+    const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(200, 1)]);
+
+    const saved = await request(context, { method: 'PUT', url: `/v1/me/carnet/${child.id}/photo`, token: owner.token, payload: { image: png.toString('base64') } });
+    const notImage = await request(context, {
+      method: 'PUT',
+      url: `/v1/me/carnet/${child.id}/photo`,
+      token: owner.token,
+      payload: { image: Buffer.alloc(300, 7).toString('base64') },
+    });
+    const mine = await request(context, { method: 'GET', url: `/v1/me/carnet/${child.id}/photo`, token: owner.token });
+    const theirs = await request(context, { method: 'GET', url: `/v1/me/carnet/${child.id}/photo`, token: other.token });
+    const cards = await request(context, { method: 'GET', url: '/v1/me/carnet', token: owner.token });
+
+    expect(saved.statusCode).toBe(204);
+    expect(notImage.statusCode).toBe(400);
+    expect(mine.headers['content-type']).toBe('image/png');
+    expect(mine.rawPayload.equals(png)).toBe(true);
+    expect(theirs.statusCode).toBe(404);
+    expect(cards.json<GuardianChildCard[]>()[0]?.photoVersion).not.toBeNull();
   });
 
   it('no deja ver el carnet sin vínculo activo ni a otro rol', async () => {
