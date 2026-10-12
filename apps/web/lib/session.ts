@@ -3,7 +3,7 @@ import type { CurrentAccount, Role } from '@carnet/contracts';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
-import { type ApiRequest, type ApiResult, requestEmpty, requestJson } from './api-client';
+import { type ApiFailure, type ApiRequest, type ApiResult, requestBinary, requestEmpty, requestJson } from './api-client';
 import { clientIpFrom } from './client-ip';
 import { ACCESS_COOKIE } from './session-cookies';
 
@@ -33,6 +33,10 @@ export async function api<T>(path: string, request: SessionRequest = {}): Promis
 
 export async function apiEmpty(path: string, request: SessionRequest = {}): Promise<ApiResult<null>> {
   return requestEmpty(path, await withSession(request));
+}
+
+export async function apiBinary(path: string): Promise<Response | ApiFailure> {
+  return requestBinary(path, await withSession({}));
 }
 
 export const currentAccount = cache(async (): Promise<CurrentAccount | null> => {
