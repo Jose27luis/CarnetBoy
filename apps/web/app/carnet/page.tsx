@@ -2,6 +2,7 @@ import type { GuardianChildCard } from '@carnet/contracts';
 import { ChevronRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { ChildAvatar } from '@/components/carnet/child-avatar';
 import { ChildCarousel } from '@/components/carnet/child-carousel';
 import { ProgressRing } from '@/components/carnet/progress-ring';
 import { ageInMonthsAndDays } from '@/lib/family-labels';
@@ -20,7 +21,8 @@ function ChildCard({ child, today }: { child: GuardianChildCard; today: string }
       className="group flex w-full flex-col gap-6 rounded-[24px] border border-celeste-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(11,79,111,0.45)] transition-transform active:scale-[0.99]"
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
+        <ChildAvatar childId={child.id} name={child.givenNames} photoVersion={child.photoVersion} size="md" editable={false} />
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold uppercase tracking-wider text-celeste-700">{ageInMonthsAndDays(child.birthDate, today)}</p>
           <h2 className="mt-1 text-2xl font-semibold leading-tight">{child.givenNames}</h2>
           <p className="text-muted">
