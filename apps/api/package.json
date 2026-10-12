@@ -25,15 +25,18 @@
     "@node-rs/argon2": "^2.2.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "bullmq": "^6.3.12",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "fastify": "^5.12.5",
     "ioredis": "^6.0.0",
     "otplib": "^13.5.0",
+    "pdfkit": "^0.20.2",
     "prisma": "^7.10.0",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "web-push": "^3.6.7",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -42,7 +45,9 @@
     "@nestjs/testing": "^12.1.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.4.1",
+    "@types/pdfkit": "^0.17.6",
     "@types/qrcode": "^1.5.6",
+    "@types/web-push": "^3.6.4",
     "jest": "^30.5.2",
     "ts-jest": "^29.4.14",
     "typescript": "^5.9.3"
@@ -55,7 +60,12 @@
         "testRegex": "\\.spec\\.ts$",
         "testEnvironment": "node",
         "transform": {
-          "^.+\\.ts$": ["ts-jest", { "tsconfig": "<rootDir>/../tsconfig.json" }]
+          "^.+\\.ts$": [
+            "ts-jest",
+            {
+              "tsconfig": "<rootDir>/../tsconfig.json"
+            }
+          ]
         }
       },
       {
@@ -66,7 +76,12 @@
         "globalSetup": "<rootDir>/support/global-setup.ts",
         "globalTeardown": "<rootDir>/support/global-teardown.ts",
         "transform": {
-          "^.+\\.ts$": ["ts-jest", { "tsconfig": "<rootDir>/../tsconfig.json" }]
+          "^.+\\.ts$": [
+            "ts-jest",
+            {
+              "tsconfig": "<rootDir>/../tsconfig.json"
+            }
+          ]
         }
       }
     ]
