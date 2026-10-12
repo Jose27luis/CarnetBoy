@@ -25,6 +25,14 @@ import {
   SEXES,
   type Sex,
 } from '@carnet/contracts';
+import { IsBase64, MaxLength } from 'class-validator';
+
+export class UploadPhotoDto {
+  @ApiProperty({ description: 'Imagen en base64 sin el prefijo data:' })
+  @IsBase64({}, { message: 'La foto no tiene un formato válido.' })
+  @MaxLength(960_000, { message: 'La foto debe pesar menos de 700 KB.' })
+  image!: string;
+}
 
 export class GuardianChildCardDto implements GuardianChildCard {
   @ApiProperty({ format: 'uuid' })
@@ -53,6 +61,9 @@ export class GuardianChildCardDto implements GuardianChildCard {
 
   @ApiProperty({ description: 'Dosis cuya edad máxima ya pasó' })
   dosesOverdue!: number;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Cambia cada vez que se reemplaza la foto' })
+  photoVersion!: string | null;
 }
 
 class CarnetChildDto extends GuardianChildCardDto {
