@@ -30,7 +30,8 @@ import {
 import { buttonClass, PANEL_CLASS } from '@/lib/ui';
 import { AnemiaSection } from './anemia-section';
 import { AppointmentsSection } from './appointments-section';
-import { CHILD_TABS, type ChildTab, ChildTabs } from './child-tabs';
+import { CHILD_TABS, type ChildTab } from './child-tab-list';
+import { ChildTabs } from './child-tabs';
 import { GrowthSection } from './growth-section';
 import { LinkGuardian } from './link-guardian';
 import { ReissueCode } from './reissue-code';
