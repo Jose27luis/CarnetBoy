@@ -1,6 +1,7 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, FileDown } from 'lucide-react';
 import Link from 'next/link';
 import { CarnetNav } from '@/components/carnet/carnet-nav';
+import { ChildAvatar } from '@/components/carnet/child-avatar';
 import { ageInMonthsAndDays } from '@/lib/family-labels';
 import { loadCarnet, loadChildCards } from '@/lib/guardian';
 import { todayInLima } from '@/lib/labels';
@@ -23,12 +24,25 @@ export default async function ChildCarnetLayout({ children, params }: ChildLayou
           <ChevronLeft aria-hidden="true" className="size-4" />
           Mis hijos
         </Link>
-        <div>
-          <h1 className="text-3xl font-semibold leading-tight">{child.givenNames}</h1>
-          <p className="text-muted">
-            {ageInMonthsAndDays(child.birthDate, todayInLima())}
-            {child.gestationalWeeks !== null && child.gestationalWeeks < 37 ? `. Nació a las ${child.gestationalWeeks} semanas` : ''}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <ChildAvatar childId={child.id} name={child.givenNames} photoVersion={child.photoVersion} size="lg" editable />
+            <div>
+              <h1 className="text-3xl font-semibold leading-tight">{child.givenNames}</h1>
+              <p className="text-muted">
+                {ageInMonthsAndDays(child.birthDate, todayInLima())}
+                {child.gestationalWeeks !== null && child.gestationalWeeks < 37 ? `. Nació a las ${child.gestationalWeeks} semanas` : ''}
+              </p>
+            </div>
+          </div>
+          <a
+            href={`/carnet/${child.id}/pdf`}
+            download
+            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-celeste-200 bg-white px-4 text-sm font-semibold text-celeste-800 hover:bg-celeste-50"
+          >
+            <FileDown aria-hidden="true" className="size-4" />
+            Descargar PDF
+          </a>
         </div>
         {siblings.length === 0 ? null : (
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
