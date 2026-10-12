@@ -76,6 +76,7 @@ export function ChildForm({ child, initialDocument }: ChildFormProps): React.JSX
             maxLength={12}
             pattern="[0-9]{8,12}"
             required={false}
+            help="Número del certificado que se entrega al nacer, solo dígitos (8 a 12). Úsalo si el niño aún no tiene DNI."
             defaultValue={value('cnv')}
             error={error('cnv')}
           />
@@ -95,14 +96,14 @@ export function ChildForm({ child, initialDocument }: ChildFormProps): React.JSX
           />
           <FormField label="Fecha de nacimiento" name="birthDate" type="date" defaultValue={value('birthDate')} error={error('birthDate')} />
           <FormField
-            label="Semanas de gestación"
+            label="Semanas de gestación al nacer"
             name="gestationalWeeks"
             type="number"
             inputMode="numeric"
             min={22}
             max={44}
             required={false}
-            help="Para la edad corregida de prematuros."
+            help="Semanas de embarazo cuando nació, entre 22 y 44 (a término: 37 a 41). Déjalo vacío si no lo sabes."
             defaultValue={value('gestationalWeeks')}
             error={error('gestationalWeeks')}
           />
