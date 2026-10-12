@@ -93,6 +93,16 @@ export async function requestJson<T>(path: string, request: ApiRequest = {}): Pr
   return { ok: true, status: response.status, data: (await response.json()) as T };
 }
 
+export async function requestBinary(path: string, request: ApiRequest = {}): Promise<Response | ApiFailure> {
+  const response = await send(path, request);
+
+  if (response === null) {
+    return UNREACHABLE;
+  }
+
+  return response.ok ? response : toFailure(response);
+}
+
 export async function requestEmpty(path: string, request: ApiRequest = {}): Promise<ApiResult<null>> {
   const response = await send(path, request);
 
