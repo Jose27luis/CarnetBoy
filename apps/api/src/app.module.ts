@@ -15,6 +15,7 @@ import { ImmunizationModule } from './modules/immunization/immunization.module';
 import { CatalogsModule } from './modules/catalogs/catalogs.module';
 import { ChildrenModule } from './modules/children/children.module';
 import { FacilitiesModule } from './modules/facilities/facilities.module';
+import { GuardianModule } from './modules/guardian/guardian.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { ScheduleModule } from './modules/schedule/schedule.module';
@@ -37,6 +38,7 @@ import { ScheduleModule } from './modules/schedule/schedule.module';
     AnemiaModule,
     CorrectionsModule,
     ScheduleModule,
+    GuardianModule,
   ],
   providers: [
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
