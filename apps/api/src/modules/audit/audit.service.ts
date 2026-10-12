@@ -44,6 +44,16 @@ export class AuditService {
     });
   }
 
+  async entitiesWithActions(entity: string, actions: readonly string[], since: Date): Promise<string[]> {
+    const rows = await this.prisma.auditEvent.findMany({
+      where: { entity, action: { in: [...actions] }, occurredAt: { gte: since } },
+      select: { entityId: true },
+      distinct: ['entityId'],
+    });
+
+    return rows.map((row) => row.entityId);
+  }
+
   async list(query: AuditQuery): Promise<Page<AuditEventItem>> {
     const rows = await this.prisma.auditEvent.findMany({
       where: {
