@@ -94,6 +94,16 @@ export class ScheduleService {
     };
   }
 
+  async upcoming(childId: string): Promise<Appointment[]> {
+    const rows = await this.prisma.appointment.findMany({
+      where: { childId, status: 'SCHEDULED' },
+      include: APPOINTMENT_INCLUDE,
+      orderBy: { scheduledOn: 'asc' },
+    });
+
+    return rows.map(toAppointment);
+  }
+
   async schedule(context: ActorContext, childId: string, input: NewAppointment, idempotencyKey: string, now: Date = new Date()): Promise<Appointment> {
     await this.children.basics(childId);
     const scheduledOn = this.validDate(input.scheduledOn, now);
