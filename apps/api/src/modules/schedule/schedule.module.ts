@@ -12,5 +12,6 @@ import { ScheduleService } from './schedule.service';
   imports: [AuditModule, IdempotencyModule, CatalogsModule, ChildrenModule, FacilitiesModule, ImmunizationModule],
   controllers: [ScheduleController],
   providers: [ScheduleService],
+  exports: [ScheduleService],
 })
 export class ScheduleModule {}
