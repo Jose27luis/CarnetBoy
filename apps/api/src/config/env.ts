@@ -33,10 +33,22 @@ const envSchema = z
       z.string().min(BOOTSTRAP_PASSWORD_MIN_LENGTH, `Debe tener al menos ${BOOTSTRAP_PASSWORD_MIN_LENGTH} caracteres`).optional(),
     ),
     BOOTSTRAP_ADMIN_NAME: optionalText.pipe(z.string().min(3).max(160).optional()),
+    RESEND_API_KEY: optionalText.pipe(z.string().startsWith('re_', 'Debe empezar con re_').optional()),
+    MAIL_FROM: optionalText.pipe(z.string().min(3).max(200).optional()),
+    VAPID_PUBLIC_KEY: optionalText,
+    VAPID_PRIVATE_KEY: optionalText,
   })
   .refine((env) => (env.BOOTSTRAP_ADMIN_EMAIL === undefined) === (env.BOOTSTRAP_ADMIN_PASSWORD === undefined), {
     message: 'BOOTSTRAP_ADMIN_EMAIL y BOOTSTRAP_ADMIN_PASSWORD van juntos',
     path: ['BOOTSTRAP_ADMIN_PASSWORD'],
+  })
+  .refine((env) => (env.RESEND_API_KEY === undefined) === (env.MAIL_FROM === undefined), {
+    message: 'RESEND_API_KEY y MAIL_FROM van juntos',
+    path: ['MAIL_FROM'],
+  })
+  .refine((env) => (env.VAPID_PUBLIC_KEY === undefined) === (env.VAPID_PRIVATE_KEY === undefined), {
+    message: 'VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY van juntos',
+    path: ['VAPID_PRIVATE_KEY'],
   });
 
 export type Env = z.infer<typeof envSchema>;
