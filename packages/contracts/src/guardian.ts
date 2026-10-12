@@ -12,6 +12,7 @@ export interface GuardianChildCard {
   dosesApplied: number;
   dosesDue: number;
   dosesOverdue: number;
+  photoVersion: string | null;
 }
 
 export interface CarnetDose {
