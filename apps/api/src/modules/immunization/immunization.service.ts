@@ -64,7 +64,7 @@ export class ImmunizationService implements ClinicalRecordHandler {
     private readonly children: ChildrenService,
   ) {}
 
-  async status(viewerId: string, facilityId: string, childId: string, now: Date = new Date()): Promise<ImmunizationStatus> {
+  async status(viewerId: string, facilityId: string | null, childId: string, now: Date = new Date()): Promise<ImmunizationStatus> {
     const child = await this.children.basics(childId);
     const schedule = await this.catalogs.scheduleInForce(child.birthDate);
 
@@ -95,7 +95,7 @@ export class ImmunizationService implements ClinicalRecordHandler {
           applied: row === undefined ? null : toDoseRecord(row, viewerId, now),
         };
       }),
-      recentLots: await this.recentLots(facilityId, schedule.doses),
+      recentLots: facilityId === null ? {} : await this.recentLots(facilityId, schedule.doses),
     };
   }
 
