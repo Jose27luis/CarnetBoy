@@ -9,6 +9,8 @@ export function contentSecurityPolicy(nonce: string, development: boolean): stri
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
+    "worker-src 'self'",
+    "manifest-src 'self'",
     `connect-src 'self'${development ? ' ws:' : ''}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
