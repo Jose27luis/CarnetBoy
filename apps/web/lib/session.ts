@@ -12,7 +12,7 @@ type SessionRequest = Omit<ApiRequest, 'token' | 'clientIp'>;
 export const HOME_BY_ROLE: Record<Role, string> = {
   ADMIN: '/admin',
   DIGITIZER: '/digitador',
-  GUARDIAN: '/pronto',
+  GUARDIAN: '/carnet',
 };
 
 export async function accessToken(): Promise<string | null> {
