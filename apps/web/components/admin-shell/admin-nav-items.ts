@@ -1,6 +1,7 @@
 import {
   Building2,
   CalendarClock,
+  CalendarDays,
   ClipboardList,
   Droplet,
   FilePenLine,
@@ -8,7 +9,9 @@ import {
   Link2,
   type LucideIcon,
   ScrollText,
+  Search,
   Syringe,
+  UserPlus,
   Users,
 } from 'lucide-react';
 
@@ -19,6 +22,7 @@ export interface NavItem {
   label: string;
   icon: LucideIcon;
   exact?: boolean;
+  pattern?: RegExp;
 }
 
 export interface NavGroup {
@@ -54,6 +58,29 @@ export const ADMIN_NAV: readonly NavGroup[] = [
   },
 ];
 
+export const DIGITIZER_NAV: readonly NavGroup[] = [
+  {
+    title: 'Atención',
+    items: [
+      { href: '/digitador', label: 'Buscar niño', icon: Search, exact: true, pattern: /^\/digitador\/ninos\/(?!nuevo$)[^/]+/ },
+      { href: '/digitador/ninos/nuevo', label: 'Registrar niño', icon: UserPlus, exact: true },
+      { href: '/digitador/agenda', label: 'Agenda', icon: CalendarDays, exact: true },
+    ],
+  },
+  {
+    title: 'Trabajo',
+    items: [{ href: '/digitador/establecimiento', label: 'Cambiar establecimiento', icon: Building2, exact: true }],
+  },
+];
+
+export const SHELL_NAV = { admin: ADMIN_NAV, digitizer: DIGITIZER_NAV } as const;
+
+export type ShellVariant = keyof typeof SHELL_NAV;
+
 export function isActive(item: NavItem, pathname: string): boolean {
+  if (item.pattern?.test(pathname) === true) {
+    return true;
+  }
+
   return item.exact === true ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
