@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { GuardianChildName, Sex } from '@carnet/contracts';
 import { DomainError } from '../../common/errors/domain-error';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
+import { expireStaleLinks } from './stale-links';
 
 export interface LinkedChild extends GuardianChildName {
   sex: Sex;
@@ -37,6 +38,35 @@ export class GuardianChildrenService {
     });
 
     return links.map(({ child }) => ({ ...child, birthDate: child.birthDate.toISOString().slice(0, 10) }));
+  }
+
+  async childrenWithActiveGuardians(): Promise<string[]> {
+    const links = await this.prisma.guardianLink.findMany({
+      where: { status: 'ACTIVE', guardian: { accountId: { not: null } } },
+      select: { childId: true },
+      distinct: ['childId'],
+    });
+
+    return links.map((link) => link.childId);
+  }
+
+  expirePendingLinks(now: Date): Promise<number> {
+    return expireStaleLinks(this.prisma, 'ALL', now);
+  }
+
+  async registeredEmail(accountId: string): Promise<string | null> {
+    const guardian = await this.prisma.guardian.findUnique({ where: { accountId }, select: { email: true } });
+
+    return guardian?.email ?? null;
+  }
+
+  async guardianAccountsOf(childId: string): Promise<{ accountId: string; email: string | null }[]> {
+    const links = await this.prisma.guardianLink.findMany({
+      where: { childId, status: 'ACTIVE', guardian: { accountId: { not: null } } },
+      select: { guardian: { select: { accountId: true, email: true } } },
+    });
+
+    return links.flatMap(({ guardian }) => (guardian.accountId === null ? [] : [{ accountId: guardian.accountId, email: guardian.email }]));
   }
 
   async linkedChild(accountId: string, childId: string): Promise<LinkedChild> {
