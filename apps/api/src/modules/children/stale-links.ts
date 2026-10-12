@@ -1,17 +1,22 @@
 import { Prisma } from '@prisma/client';
 import type { Tx } from '../../infrastructure/prisma/transaction';
 
-export async function expireStaleLinks(tx: Tx, scope: { childId?: string; guardianId?: string }, now: Date = new Date()): Promise<void> {
-  const conditions = [
-    ...(scope.childId === undefined ? [] : [Prisma.sql`l.child_id = ${scope.childId}::uuid`]),
-    ...(scope.guardianId === undefined ? [] : [Prisma.sql`l.guardian_id = ${scope.guardianId}::uuid`]),
-  ];
+export type StaleLinkScope = { childId?: string; guardianId?: string } | 'ALL';
+
+export async function expireStaleLinks(tx: Tx, scope: StaleLinkScope, now: Date = new Date()): Promise<number> {
+  const conditions =
+    scope === 'ALL'
+      ? [Prisma.sql`TRUE`]
+      : [
+          ...(scope.childId === undefined ? [] : [Prisma.sql`l.child_id = ${scope.childId}::uuid`]),
+          ...(scope.guardianId === undefined ? [] : [Prisma.sql`l.guardian_id = ${scope.guardianId}::uuid`]),
+        ];
 
   if (conditions.length === 0) {
-    return;
+    return 0;
   }
 
-  await tx.$executeRaw`
+  return tx.$executeRaw`
     UPDATE guardian_links l
     SET status = 'EXPIRED', version = l.version + 1, updated_at = ${now}
     WHERE l.status = 'PENDING'
