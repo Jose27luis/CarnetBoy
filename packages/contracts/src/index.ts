@@ -6,3 +6,4 @@ export * from './audit';
 export * from './children';
 export * from './clinical';
 export * from './schedule';
+export * from './guardian';
