@@ -21,6 +21,7 @@ import { GrowthService } from '../growth/growth.service';
 import { ImmunizationService } from '../immunization/immunization.service';
 import { ScheduleService } from '../schedule/schedule.service';
 import { achievementsFor } from './achievements';
+import { ChildPhotoService } from './child-photo.service';
 
 function toDoses(status: ImmunizationStatus): CarnetDose[] {
   return status.doses.map((dose) => ({
@@ -38,8 +39,9 @@ function toDoses(status: ImmunizationStatus): CarnetDose[] {
   }));
 }
 
-function toCard(child: LinkedChild, doses: readonly CarnetDose[]): GuardianChildCard {
+function toCard(child: LinkedChild, doses: readonly CarnetDose[], photoVersion: string | null): GuardianChildCard {
   return {
+    photoVersion,
     id: child.id,
     givenNames: child.givenNames,
     paternalSurname: child.paternalSurname,
@@ -106,24 +108,28 @@ export class CarnetService {
     private readonly hemoglobin: HemoglobinService,
     private readonly iron: IronService,
     private readonly schedule: ScheduleService,
+    private readonly photos: ChildPhotoService,
   ) {}
 
   async cards(accountId: string, now: Date = new Date()): Promise<GuardianChildCard[]> {
-    const children = await this.guardianChildren.linkedChildren(accountId);
+    const [children, photoVersions] = await Promise.all([this.guardianChildren.linkedChildren(accountId), this.photos.versions(accountId)]);
 
     return Promise.all(
-      children.map(async (child) => toCard(child, toDoses(await this.immunization.status(accountId, null, child.id, now)))),
+      children.map(async (child) =>
+        toCard(child, toDoses(await this.immunization.status(accountId, null, child.id, now)), photoVersions.get(child.id) ?? null),
+      ),
     );
   }
 
   async carnet(accountId: string, childId: string, now: Date = new Date()): Promise<GuardianCarnet> {
     const child = await this.guardianChildren.linkedChild(accountId, childId);
-    const [status, checks, tests, supplies, upcoming] = await Promise.all([
+    const [status, checks, tests, supplies, upcoming, photoVersions] = await Promise.all([
       this.immunization.status(accountId, null, childId, now),
       this.growth.list(accountId, childId, now),
       this.hemoglobin.list(accountId, childId, now),
       this.iron.list(accountId, childId, now),
       this.schedule.upcoming(childId),
+      this.photos.versions(accountId),
     ]);
     const doses = toDoses(status);
     const growth: CarnetGrowthCheck[] = checks.map((check) => ({
@@ -173,7 +179,7 @@ export class CarnetService {
     }));
 
     return {
-      child: { ...toCard(child, doses), gestationalWeeks: child.gestationalWeeks },
+      child: { ...toCard(child, doses, photoVersions.get(childId) ?? null), gestationalWeeks: child.gestationalWeeks },
       scheduleNorm: status.schedule?.norm ?? null,
       doses,
       growth,
