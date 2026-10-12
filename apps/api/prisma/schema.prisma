@@ -62,6 +62,24 @@ enum AppointmentOrigin {
   SYSTEM
 }
 
+enum NotificationKind {
+  APPOINTMENT_REMINDER
+  DOSE_OVERDUE
+  CARNET_UPDATED
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
 enum LinkStatus {
   PENDING
   ACTIVE
@@ -145,6 +163,10 @@ model Account {
   correctionsResolved CorrectionRequest[]  @relation("CorrectionResolvedBy")
   appointmentsCreated Appointment[]        @relation("AppointmentCreatedBy")
   appointmentsClosed  Appointment[]        @relation("AppointmentClosedBy")
+  notificationSetting NotificationSetting?
+  pushSubscriptions   PushSubscription[]
+  notifications       Notification[]
+  childPhotos         ChildPhoto[]
 
   @@map("accounts")
 }
@@ -350,6 +372,7 @@ model Child {
   ironSupplies      IronSupply[]
   corrections       CorrectionRequest[]
   appointments      Appointment[]
+  photos            ChildPhoto[]
 
   @@map("children")
 }
@@ -619,4 +642,69 @@ model Appointment {
   @@index([facilityId, scheduledOn])
   @@index([childId, status])
   @@map("appointments")
+}
+
+model NotificationSetting {
+  accountId    String   @id @map("account_id") @db.Uuid
+  emailEnabled Boolean  @default(true) @map("email_enabled")
+  pushEnabled  Boolean  @default(true) @map("push_enabled")
+  email        String?  @db.VarChar(254)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@map("notification_settings")
+}
+
+model PushSubscription {
+  id            String    @id @default(uuid()) @db.Uuid
+  accountId     String    @map("account_id") @db.Uuid
+  endpoint      String    @unique @db.VarChar(1000)
+  p256dh        String    @db.VarChar(200)
+  auth          String    @db.VarChar(100)
+  userAgent     String?   @map("user_agent") @db.VarChar(300)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSuccessAt DateTime? @map("last_success_at") @db.Timestamptz(3)
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@map("push_subscriptions")
+}
+
+model Notification {
+  id        String              @id @default(uuid()) @db.Uuid
+  accountId String              @map("account_id") @db.Uuid
+  childId   String?             @map("child_id") @db.Uuid
+  kind      NotificationKind
+  channel   NotificationChannel
+  status    NotificationStatus  @default(QUEUED)
+  dedupeKey String              @unique @map("dedupe_key") @db.VarChar(200)
+  title     String              @db.VarChar(120)
+  body      String              @db.VarChar(400)
+  url       String              @db.VarChar(300)
+  attempts  Int                 @default(0)
+  lastError String?             @map("last_error") @db.VarChar(300)
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  sentAt    DateTime?           @map("sent_at") @db.Timestamptz(3)
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([accountId, createdAt])
+  @@map("notifications")
+}
+
+model ChildPhoto {
+  accountId   String   @map("account_id") @db.Uuid
+  childId     String   @map("child_id") @db.Uuid
+  contentType String   @map("content_type") @db.VarChar(20)
+  data        Bytes
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  account Account @relation(fields: [accountId], references: [id])
+  child   Child   @relation(fields: [childId], references: [id])
+
+  @@id([accountId, childId])
+  @@map("child_photos")
 }
