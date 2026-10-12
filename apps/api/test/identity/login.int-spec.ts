@@ -15,7 +15,7 @@ describe('ingreso', () => {
   let context: TestContext;
 
   beforeAll(async () => {
-    context = await createTestApp();
+    context = await createTestApp({ TOTP_REQUIRED: true });
   });
 
   afterAll(async () => {
