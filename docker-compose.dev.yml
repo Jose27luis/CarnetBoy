@@ -54,3 +54,6 @@ services:
       resources:
         limits:
           memory: 2G
+
+  worker:
+    profiles: ["worker"]
