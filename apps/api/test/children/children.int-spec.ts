@@ -1,4 +1,4 @@
-import type { ApiErrorBody, ChildRecord, FacilityActivity, LinkCreated } from '@carnet/contracts';
+import type { ApiErrorBody, ChildRecord, FacilityActivity, FacilityChildren, LinkCreated } from '@carnet/contracts';
 import { CONSENT_VERSION } from '@carnet/contracts';
 import {
   createAccount,
@@ -107,6 +107,26 @@ describe('niños y vínculos', () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.json<ApiErrorBody>().fields).toEqual({ 'birth.headCircumferenceCm': ['El perímetro cefálico al nacer va de 18 a 45 cm.'] });
+  });
+
+  it('lista los niños registrados en el establecimiento y filtra por nombre', async () => {
+    const otherFacility = await signInDigitizerAt(context);
+    await registerChild({ ...childPayload(), givenNames: 'Ximena Luz', paternalSurname: 'Ccahuana' });
+    await request(context, {
+      method: 'POST',
+      url: '/v1/children',
+      token: otherFacility.token,
+      headers: { ...otherFacility.headers, 'idempotency-key': idempotencyKey() },
+      payload: { ...childPayload(), givenNames: 'Ximena Otra' },
+    });
+
+    const all = await request(context, { method: 'GET', url: '/v1/children', token: digitizer.token, headers: digitizer.headers });
+    const filtered = await request(context, { method: 'GET', url: '/v1/children?q=ximena%20ccahuana', token: digitizer.token, headers: digitizer.headers });
+    const body = all.json<FacilityChildren>();
+
+    expect(body.total).toBe(body.children.length);
+    expect(body.children.some((child) => child.givenNames === 'Ximena Otra')).toBe(false);
+    expect(filtered.json<FacilityChildren>().children.map((child) => child.givenNames)).toEqual(['Ximena Luz']);
   });
 
   it('encuentra al niño por DNI o CNV y deja la lectura de la ficha en la auditoría', async () => {
