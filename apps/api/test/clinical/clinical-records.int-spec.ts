@@ -7,6 +7,7 @@ import type {
   ChildRecord,
   CorrectionOutcome,
   CorrectionRequestItem,
+  GrowthBands,
   GrowthCheckRecord,
   HemoglobinTestRecord,
   ImmunizationStatus,
@@ -200,6 +201,17 @@ describe('registros clínicos del digitador', () => {
       expect(Math.abs(Number(check.zLengthForAge))).toBeLessThanOrEqual(0.05);
       expect(check.weightForAge).toBe('NORMAL');
       expect(check.referenceVersion).toBe('OMS 2006');
+    });
+
+    it('entrega las bandas de la OMS del niño con siete líneas de desvío', async () => {
+      const child = await registerChild('2026-02-01', { sex: 'MALE' });
+      const response = await request(context, { method: 'GET', url: `/v1/children/${child.id}/growth-checks/bands`, token: digitizer.token, headers: digitizer.headers });
+      const bands = response.json<GrowthBands>();
+
+      expect(response.statusCode).toBe(200);
+      expect(bands.weightForAge[0]?.x).toBe(0);
+      expect(bands.lengthForAge[0]?.values).toHaveLength(7);
+      expect(bands.headForAge.at(-1)?.x).toBeGreaterThanOrEqual(358);
     });
 
     it('pide confirmar un cambio de peso mayor al 30 %', async () => {
