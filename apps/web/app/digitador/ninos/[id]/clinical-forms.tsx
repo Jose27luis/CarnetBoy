@@ -191,24 +191,32 @@ export function RecordDose({ childId, scheduledDoseId, title, dose }: { childId:
   );
 }
 
-export function RecordGrowth({ childId, birthDate }: { childId: string; birthDate: string }): React.JSX.Element {
+interface RecordGrowthProps {
+  childId: string;
+  birthDate: string;
+  measuredOn?: string;
+  compact?: boolean;
+  title?: string;
+}
+
+export function RecordGrowth({ childId, birthDate, measuredOn, compact = false, title = 'Control de crecimiento' }: RecordGrowthProps): React.JSX.Element {
   return (
     <PanelForm
       trigger={
         <>
           <Plus aria-hidden="true" className="size-4" />
-          Nuevo control
+          {compact ? 'Registrar' : 'Nuevo control'}
         </>
       }
-      triggerClassName={ADD_TRIGGER}
-      title="Control de crecimiento"
+      triggerClassName={compact ? RECORD_TRIGGER : ADD_TRIGGER}
+      title={title}
       description="Los puntajes Z se calculan con los patrones de la OMS 2006 y la edad corregida si es prematuro."
       action={recordGrowthAction}
       hidden={{ childId }}
       submitLabel="Registrar control"
       pendingLabel="Registrando"
     >
-      {(state) => <GrowthFields state={state} defaults={{}} birthDate={birthDate} />}
+      {(state) => <GrowthFields state={state} defaults={measuredOn === undefined ? {} : { measuredOn }} birthDate={birthDate} />}
     </PanelForm>
   );
 }
