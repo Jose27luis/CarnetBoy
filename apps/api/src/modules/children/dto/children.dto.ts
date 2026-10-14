@@ -9,6 +9,7 @@ import {
   DELIVERY_TYPES,
   type DeliveryType,
   DNI_PATTERN,
+  type FacilityChildren,
   type Guardian,
   type GuardianLink,
   LINK_STATUSES,
@@ -188,6 +189,22 @@ export class ChildSummaryDto implements ChildSummary {
 export class SearchResultDto {
   @ApiProperty({ type: ChildSummaryDto, nullable: true })
   child!: ChildSummaryDto | null;
+}
+
+export class FacilityChildrenQueryDto {
+  @ApiPropertyOptional({ example: 'Quispe', description: 'Parte del nombre o los apellidos' })
+  @IsOptional()
+  @IsString()
+  @Length(2, 80, { message: 'Escribe al menos 2 letras del nombre.' })
+  q?: string;
+}
+
+export class FacilityChildrenDto implements FacilityChildren {
+  @ApiProperty({ description: 'Niños registrados en el establecimiento' })
+  total!: number;
+
+  @ApiProperty({ type: [ChildSummaryDto], description: 'Hasta 50, del más reciente al más antiguo' })
+  children!: ChildSummaryDto[];
 }
 
 export class GuardianDto implements Guardian {
