@@ -1,4 +1,4 @@
-import type { ChildSummary, DigitizerDashboard } from '@carnet/contracts';
+import type { ChildSummary, DigitizerDashboard, FacilityChildren } from '@carnet/contracts';
 import { ArrowRight, CalendarClock, UserPlus, UserRoundSearch } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -9,11 +9,14 @@ import { KpiCard } from '@/components/charts/kpi-card';
 import { digitizerApi, requireFacility } from '@/lib/digitizer-session';
 import { APPOINTMENT_TYPE_LABEL, childDocument, describeAgeFrom, formatCalendarDate, personName, SEX_LABEL, todayInLima } from '@/lib/labels';
 import { buttonClass } from '@/lib/ui';
+import { EmptyState } from '@/components/empty-state';
+import { ChildCard } from './child-card';
 import { SearchForm } from './search-form';
 
 export const metadata: Metadata = { title: 'Buscar niño' };
 
 const DOCUMENT_PATTERN = /^\d{8,12}$/;
+const RECENT_LIMIT = 6;
 const WEEK = new Intl.DateTimeFormat('es-PE', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 interface SearchPageProps {
@@ -86,8 +89,9 @@ export default async function DigitizerSearchPage({ searchParams }: SearchPagePr
   const document = documento?.trim() ?? '';
   const searched = document.length > 0;
   const valid = DOCUMENT_PATTERN.test(document);
-  const [dashboard, search] = await Promise.all([
+  const [dashboard, recent, search] = await Promise.all([
     load<DigitizerDashboard>('/v1/digitizer/dashboard'),
+    load<FacilityChildren>('/v1/children'),
     searched && valid ? load<{ child: ChildSummary | null }>(`/v1/children/search?document=${document}`) : Promise.resolve(null),
   ]);
   const monthRecords = dashboard.month.doses + dashboard.month.growthChecks + dashboard.month.hemoglobinTests + dashboard.month.ironSupplies;
@@ -124,9 +128,40 @@ export default async function DigitizerSearchPage({ searchParams }: SearchPagePr
           accent={dashboard.overdueAppointments === 0 ? 'mint' : 'rose'}
           href="/digitador/agenda"
         />
-        <KpiCard index={2} label="Niños registrados" value={dashboard.month.registrations} hint="Este mes aquí" icon="baby" accent="violet" />
+        <KpiCard
+          index={2}
+          label="Niños registrados"
+          value={recent.total}
+          hint={`${dashboard.month.registrations} este mes`}
+          icon="baby"
+          accent="violet"
+          href="/digitador/ninos"
+        />
         <KpiCard index={3} label="Atenciones del mes" value={monthRecords} hint={`${dashboard.month.doses} vacunas, ${dashboard.month.growthChecks} controles`} icon="syringe" accent="coral" />
       </ul>
+
+      <section aria-labelledby="recent-children" className="mb-6">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="recent-children" className="text-lg font-semibold">
+            Registrados recientemente aquí
+          </h2>
+          {recent.total > 0 ? (
+            <Link href="/digitador/ninos" className="inline-flex items-center gap-1 text-sm font-semibold text-celeste-700 hover:underline">
+              {recent.total === 1 ? 'Ver el listado' : `Ver los ${recent.total}`}
+              <ArrowRight aria-hidden="true" className="size-3.5" />
+            </Link>
+          ) : null}
+        </div>
+        {recent.children.length === 0 ? (
+          <EmptyState title="Aún no hay niños registrados aquí">Busca al niño por su DNI o CNV y, si no existe, regístralo.</EmptyState>
+        ) : (
+          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {recent.children.slice(0, RECENT_LIMIT).map((child, index) => (
+              <ChildCard key={child.id} child={child} today={todayInLima()} index={index} />
+            ))}
+          </ul>
+        )}
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <ChartCard index={0} title="Atenciones por semana" subtitle="Vacunas, controles, dosajes y entregas de hierro en este establecimiento">
