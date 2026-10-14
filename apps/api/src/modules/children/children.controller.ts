@@ -9,7 +9,15 @@ import { IdempotencyKey } from '../../infrastructure/idempotency/idempotency-key
 import { SENSITIVE_THROTTLE } from '../../infrastructure/throttling/throttling.module';
 import { AssignedFacilityGuard, CurrentFacility } from '../facilities/assigned-facility.guard';
 import { ChildrenService } from './children.service';
-import { ChildRecordDto, DocumentQueryDto, RegisterChildDto, SearchResultDto, UpdateChildDto } from './dto/children.dto';
+import {
+  ChildRecordDto,
+  DocumentQueryDto,
+  FacilityChildrenDto,
+  FacilityChildrenQueryDto,
+  RegisterChildDto,
+  SearchResultDto,
+  UpdateChildDto,
+} from './dto/children.dto';
 import { CreateLinkDto, LinkCreatedDto } from './dto/links.dto';
 import { LinksService } from './links.service';
 
@@ -26,6 +34,13 @@ export class ChildrenController {
     private readonly children: ChildrenService,
     private readonly links: LinksService,
   ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Niños registrados en el establecimiento elegido, con filtro opcional por nombre' })
+  @ApiResponse({ status: 200, type: FacilityChildrenDto })
+  list(@CurrentFacility() facilityId: string, @Query() query: FacilityChildrenQueryDto): Promise<FacilityChildrenDto> {
+    return this.children.listForFacility(facilityId, query.q);
+  }
 
   @Get('search')
   @Throttle(SENSITIVE_THROTTLE)
