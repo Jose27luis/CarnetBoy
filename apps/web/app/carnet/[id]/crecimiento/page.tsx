@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { GrowthChart } from '@/components/carnet/growth-chart';
+import { GrowthCurves } from '@/components/charts/growth-curves';
 import { loadCarnet } from '@/lib/guardian';
 
 export const metadata: Metadata = { title: 'Crecimiento' };
@@ -18,7 +18,7 @@ export default async function GrowthPage({ params }: GrowthPageProps): Promise<R
         <h2 className="text-2xl font-semibold">Crecimiento</h2>
         <p className="text-muted">Sus medidas sobre los patrones de crecimiento de la OMS. Toca un punto para ver el detalle.</p>
       </div>
-      <GrowthChart bands={carnet.growthBands} checks={carnet.growth} />
+      <GrowthCurves bands={carnet.growthBands} checks={carnet.growth} audience="family" />
     </>
   );
 }
