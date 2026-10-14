@@ -1,4 +1,5 @@
 import {
+  Baby,
   Building2,
   CalendarClock,
   CalendarDays,
@@ -62,7 +63,8 @@ export const DIGITIZER_NAV: readonly NavGroup[] = [
   {
     title: 'Atención',
     items: [
-      { href: '/digitador', label: 'Buscar niño', icon: Search, exact: true, pattern: /^\/digitador\/ninos\/(?!nuevo$)[^/]+/ },
+      { href: '/digitador', label: 'Buscar niño', icon: Search, exact: true },
+      { href: '/digitador/ninos', label: 'Niños registrados', icon: Baby, exact: true, pattern: /^\/digitador\/ninos\/(?!nuevo$)[^/]+/ },
       { href: '/digitador/ninos/nuevo', label: 'Registrar niño', icon: UserPlus, exact: true },
       { href: '/digitador/agenda', label: 'Agenda', icon: CalendarDays, exact: true },
     ],
