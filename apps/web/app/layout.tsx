@@ -1,18 +1,17 @@
 import type { Metadata, Viewport } from 'next';
-import { Lexend, Source_Sans_3 } from 'next/font/google';
+import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
 
-const lexend = Lexend({
+const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-lexend',
+  weight: ['500', '600', '700'],
+  variable: '--font-poppins',
   display: 'swap',
 });
 
-const sourceSans = Source_Sans_3({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-source-sans',
+  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -34,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
-    <html lang="es" className={`${lexend.variable} ${sourceSans.variable}`}>
+    <html lang="es" className={`${poppins.variable} ${inter.variable}`}>
       <body className="min-h-dvh overflow-x-clip antialiased">{children}</body>
     </html>
   );
