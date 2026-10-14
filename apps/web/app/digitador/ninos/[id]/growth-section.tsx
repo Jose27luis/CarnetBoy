@@ -1,15 +1,20 @@
-import type { GrowthCheckRecord } from '@carnet/contracts';
+import type { GrowthBands, GrowthCheckRecord, IronSupplyRecord } from '@carnet/contracts';
 import { Badge } from '@/components/badge';
+import { GrowthCurves } from '@/components/charts/growth-curves';
 import { EmptyState } from '@/components/empty-state';
 import { describeScheduleAge, formatCalendarDate, GROWTH_CLASS_LABEL, growthClassTone, POSITION_LABEL } from '@/lib/labels';
 import { PANEL_CLASS } from '@/lib/ui';
+import { CareGrid } from './care-grid';
 import { CorrectRecord, RecordGrowth } from './clinical-forms';
 import { RecordFooter } from './record-footer';
 
 interface GrowthSectionProps {
   childId: string;
   birthDate: string;
+  ageDays: number;
   checks: readonly GrowthCheckRecord[];
+  supplies: readonly IronSupplyRecord[];
+  bands: GrowthBands;
   pendingIds: ReadonlySet<string>;
 }
 
@@ -67,22 +72,38 @@ function CheckCard({ check, childId, birthDate, pending }: { check: GrowthCheckR
   );
 }
 
-export function GrowthSection({ childId, birthDate, checks, pendingIds }: GrowthSectionProps): React.JSX.Element {
+export function GrowthSection({ childId, birthDate, ageDays, checks, supplies, bands, pendingIds }: GrowthSectionProps): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted">Patrones de crecimiento de la OMS 2006. Del control más reciente al más antiguo.</p>
-        <RecordGrowth childId={childId} birthDate={birthDate} />
-      </div>
-      {checks.length === 0 ? (
-        <EmptyState title="Sin controles">Registra el primer control de peso y talla.</EmptyState>
-      ) : (
-        <ul className="flex flex-col gap-4">
-          {checks.map((check) => (
-            <CheckCard key={check.id} check={check} childId={childId} birthDate={birthDate} pending={pendingIds.has(check.id)} />
-          ))}
-        </ul>
-      )}
+    <div className="flex flex-col gap-6">
+      <CareGrid childId={childId} birthDate={birthDate} ageDays={ageDays} checks={checks} supplies={supplies} pendingIds={pendingIds} />
+
+      <section aria-labelledby="curves" className={`${PANEL_CLASS} flex flex-col gap-4 p-5`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 id="curves" className="text-lg font-semibold">
+              Curvas de crecimiento
+            </h2>
+            <p className="text-sm text-muted">Patrones de la OMS 2006, con la edad corregida si nació prematuro. Toca un punto para ver su puntaje Z.</p>
+          </div>
+          <RecordGrowth childId={childId} birthDate={birthDate} />
+        </div>
+        <GrowthCurves bands={bands} checks={checks} audience="staff" />
+      </section>
+
+      <section aria-labelledby="history" className="flex flex-col gap-4">
+        <h2 id="history" className="text-lg font-semibold">
+          Detalle de los controles
+        </h2>
+        {checks.length === 0 ? (
+          <EmptyState title="Sin controles">Registra el primer control de peso y talla desde la grilla.</EmptyState>
+        ) : (
+          <ul className="grid gap-4 xl:grid-cols-2">
+            {checks.map((check) => (
+              <CheckCard key={check.id} check={check} childId={childId} birthDate={birthDate} pending={pendingIds.has(check.id)} />
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
