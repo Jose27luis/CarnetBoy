@@ -19,6 +19,7 @@ import { GuardianModule } from './modules/guardian/guardian.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { ScheduleModule } from './modules/schedule/schedule.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { ScheduleModule } from './modules/schedule/schedule.module';
     ScheduleModule,
     GuardianModule,
     NotificationsModule,
+    ReportsModule,
   ],
   providers: [
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
