@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { type CalendarDate, parseCalendarDate } from '@carnet/clinical';
-import type { BloodType, ChildRecord, ChildSummary, DeliveryType, Sex } from '@carnet/contracts';
+import type { BloodType, ChildRecord, ChildSummary, DeliveryType, FacilityChildren, Sex } from '@carnet/contracts';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { todayInLima } from '../../common/clinical/record-meta';
@@ -61,6 +61,7 @@ export interface ActorContext {
 }
 
 const childReferenceSchema = z.object({ id: z.uuid() });
+const FACILITY_LIST_LIMIT = 50;
 
 function outside(value: string | undefined, min: number, max: number): boolean {
   return value !== undefined && (Number(value) < min || Number(value) > max);
@@ -119,6 +120,30 @@ export class ChildrenService {
     private readonly audit: AuditService,
     private readonly idempotency: IdempotencyService,
   ) {}
+
+  async listForFacility(facilityId: string, query: string | undefined): Promise<FacilityChildren> {
+    const terms = (query ?? '')
+      .trim()
+      .split(/\s+/)
+      .filter((term) => term.length >= 2)
+      .slice(0, 4);
+    const where: Prisma.ChildWhereInput = {
+      createdAtFacilityId: facilityId,
+      AND: terms.map((term) => ({
+        OR: [
+          { givenNames: { contains: term, mode: 'insensitive' } },
+          { paternalSurname: { contains: term, mode: 'insensitive' } },
+          { maternalSurname: { contains: term, mode: 'insensitive' } },
+        ],
+      })),
+    };
+    const [total, rows] = await Promise.all([
+      this.prisma.child.count({ where: { createdAtFacilityId: facilityId } }),
+      this.prisma.child.findMany({ where, orderBy: { createdAt: 'desc' }, take: FACILITY_LIST_LIMIT }),
+    ]);
+
+    return { total, children: rows.map(toChildSummary) };
+  }
 
   async search(document: string): Promise<ChildSummary | null> {
     const child = await this.prisma.child.findFirst({ where: { OR: [{ dni: document }, { cnv: document }] } });
