@@ -6,9 +6,9 @@ describe('bandas de la OMS', () => {
     const [point] = growthBands('WEIGHT_FOR_AGE', 'FEMALE', 180, 180, 1);
 
     expect(point?.x).toBe(180);
-    expect(zScore('WEIGHT_FOR_AGE', 'FEMALE', 180, point?.values[2] ?? 0)).toBeCloseTo(0, 1);
-    expect(zScore('WEIGHT_FOR_AGE', 'FEMALE', 180, point?.values[1] ?? 0)).toBeCloseTo(-2, 1);
-    expect(zScore('WEIGHT_FOR_AGE', 'FEMALE', 180, point?.values[3] ?? 0)).toBeCloseTo(2, 1);
+    point?.values.forEach((value, index) => {
+      expect(zScore('WEIGHT_FOR_AGE', 'FEMALE', 180, value)).toBeCloseTo(index - 3, 1);
+    });
   });
 
   it('muestrea el rango con el paso pedido y omite lo que queda fuera de la tabla', () => {
