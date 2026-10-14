@@ -1,22 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { daysBetween, growthBands, parseCalendarDate } from '@carnet/clinical';
 import type {
   CarnetAppointment,
   CarnetDose,
   CarnetGrowthCheck,
   CarnetHemoglobinTest,
   CarnetIronSupply,
-  GrowthBands,
   GuardianCarnet,
   GuardianChildCard,
   ImmunizationStatus,
   NextStep,
-  Sex,
 } from '@carnet/contracts';
-import { todayInLima } from '../../common/clinical/record-meta';
 import { HemoglobinService } from '../anemia/hemoglobin.service';
 import { IronService } from '../anemia/iron.service';
 import { GuardianChildrenService, type LinkedChild } from '../children/guardian-children.service';
+import { bandsFor } from '../growth/growth-bands';
 import { GrowthService } from '../growth/growth.service';
 import { ImmunizationService } from '../immunization/immunization.service';
 import { ScheduleService } from '../schedule/schedule.service';
@@ -51,22 +48,6 @@ function toCard(child: LinkedChild, doses: readonly CarnetDose[], photoVersion: 
     dosesApplied: doses.filter((dose) => dose.status === 'APPLIED').length,
     dosesDue: doses.filter((dose) => dose.status === 'DUE').length,
     dosesOverdue: doses.filter((dose) => dose.status === 'OVERDUE').length,
-  };
-}
-
-const BANDS_MIN_DAYS = 365;
-const BANDS_MAX_DAYS = 1856;
-const BANDS_MARGIN_DAYS = 90;
-
-export function bandsFor(sex: Sex, birthDate: string, now: Date): GrowthBands {
-  const ageDays = daysBetween(parseCalendarDate(birthDate), todayInLima(now));
-  const to = Math.min(BANDS_MAX_DAYS, Math.max(BANDS_MIN_DAYS, ageDays + BANDS_MARGIN_DAYS));
-  const step = to <= 730 ? 7 : 14;
-
-  return {
-    weightForAge: growthBands('WEIGHT_FOR_AGE', sex, 0, to, step),
-    lengthForAge: growthBands('LENGTH_FOR_AGE', sex, 0, to, step),
-    headForAge: growthBands('HEAD_FOR_AGE', sex, 0, to, step),
   };
 }
 
