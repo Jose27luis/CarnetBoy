@@ -2,6 +2,7 @@ import type {
   AnemiaOverview,
   ChildRecord,
   ChildSchedule,
+  GrowthBands,
   GrowthCheckRecord,
   GuardianLink,
   ImmunizationStatus,
@@ -19,6 +20,7 @@ import {
   ANEMIA_LABEL,
   APPOINTMENT_TYPE_LABEL,
   childDocument,
+  daysBetween,
   DELIVERY_TYPE_LABEL,
   describeAgeFrom,
   formatCalendarDate,
@@ -147,7 +149,7 @@ function statsOf(childId: string, data: ClinicalData): ChildStat[] {
   ];
 }
 
-function ClinicalSection({ tab, child, data }: { tab: Exclude<ChildTab, 'datos'>; child: ChildRecord; data: ClinicalData }): React.JSX.Element {
+async function ClinicalSection({ tab, child, data }: { tab: Exclude<ChildTab, 'datos'>; child: ChildRecord; data: ClinicalData }): Promise<React.JSX.Element> {
   if (tab === 'citas') {
     return <AppointmentsSection childId={child.id} schedule={data.schedule} />;
   }
@@ -157,7 +159,19 @@ function ClinicalSection({ tab, child, data }: { tab: Exclude<ChildTab, 'datos'>
   }
 
   if (tab === 'crecimiento') {
-    return <GrowthSection childId={child.id} birthDate={child.birthDate} checks={data.checks} pendingIds={data.pendingIds} />;
+    const bands = await loadSection<GrowthBands>(`/v1/children/${child.id}/growth-checks/bands`);
+
+    return (
+      <GrowthSection
+        childId={child.id}
+        birthDate={child.birthDate}
+        ageDays={daysBetween(child.birthDate, todayInLima())}
+        checks={data.checks}
+        supplies={data.anemia.supplies}
+        bands={bands}
+        pendingIds={data.pendingIds}
+      />
+    );
   }
 
   return <AnemiaSection childId={child.id} birthDate={child.birthDate} overview={data.anemia} pendingIds={data.pendingIds} />;
