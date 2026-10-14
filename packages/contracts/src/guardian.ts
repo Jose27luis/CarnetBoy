@@ -93,7 +93,7 @@ export interface Achievement {
 
 export interface GrowthBandPoint {
   x: number;
-  values: [number, number, number, number, number];
+  values: [number, number, number, number, number, number, number];
 }
 
 export interface GrowthBands {
