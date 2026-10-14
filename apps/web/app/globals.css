@@ -16,11 +16,56 @@
   --color-ok: #127a4b;
   --color-warn: #a15c07;
 
-  --font-display: var(--font-lexend), 'Trebuchet MS', sans-serif;
-  --font-sans: var(--font-source-sans), system-ui, sans-serif;
+  --color-coral-50: #fff3ef;
+  --color-coral-100: #ffe0d6;
+  --color-coral-500: #ff7a59;
+  --color-coral-700: #d4502f;
+  --color-mint-50: #ecfaf4;
+  --color-mint-100: #cdf2e2;
+  --color-mint-500: #22b07d;
+  --color-mint-700: #127a55;
+  --color-sun-50: #fff8e8;
+  --color-sun-100: #ffecbf;
+  --color-sun-500: #f5b23c;
+  --color-sun-700: #a86d05;
+  --color-violet-50: #f3f0ff;
+  --color-violet-100: #e2dbff;
+  --color-violet-500: #7c5cff;
+  --color-violet-700: #5638d6;
+  --color-rose-50: #fff0f4;
+  --color-rose-100: #ffd6e0;
+  --color-rose-500: #ef5579;
+  --color-rose-700: #c22f53;
 
-  --radius-control: 10px;
-  --radius-panel: 14px;
+  --font-display: var(--font-poppins), 'Segoe UI', sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --radius-control: 12px;
+  --radius-panel: 20px;
+
+  --animate-rise: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-float: float 9s ease-in-out infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(12px, -14px) scale(1.06);
+    }
+  }
 }
 
 @layer base {
@@ -31,16 +76,23 @@
 
   body {
     background-color: var(--color-canvas);
+    background-image:
+      radial-gradient(60rem 30rem at 100% -10%, rgb(56 182 232 / 0.12), transparent 60%),
+      radial-gradient(40rem 26rem at -10% 10%, rgb(124 92 255 / 0.07), transparent 60%),
+      radial-gradient(50rem 30rem at 50% 110%, rgb(255 122 89 / 0.06), transparent 60%);
+    background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-size: 1rem;
+    font-size: 0.97rem;
     line-height: 1.55;
+    letter-spacing: -0.005em;
   }
 
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
+    letter-spacing: -0.015em;
     text-wrap: balance;
   }
 
