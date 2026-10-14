@@ -51,6 +51,11 @@ export interface ChildSummary extends PersonName {
   birthDate: string;
 }
 
+export interface FacilityChildren {
+  total: number;
+  children: ChildSummary[];
+}
+
 export interface Guardian extends PersonName {
   id: string;
   dni: string;
