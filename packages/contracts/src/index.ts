@@ -8,3 +8,4 @@ export * from './clinical';
 export * from './schedule';
 export * from './guardian';
 export * from './notifications';
+export * from './reports';
