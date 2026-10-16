@@ -181,7 +181,7 @@ export class LoginService {
   }
 
   private async nextStep(account: Account, ip: string, now: Date): Promise<LoginStep> {
-    if (account.passwordChangeRequired) {
+    if (account.passwordChangeRequired && (this.env.STAFF_PASSWORD_CHANGE || !isStaff(account.role))) {
       return { step: 'PASSWORD_CHANGE_REQUIRED', ...this.challenges.issue(account.id, 'PASSWORD_CHANGE', now) };
     }
 
