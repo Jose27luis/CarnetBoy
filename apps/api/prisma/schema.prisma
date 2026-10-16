@@ -167,6 +167,7 @@ model Account {
   pushSubscriptions   PushSubscription[]
   notifications       Notification[]
   childPhotos         ChildPhoto[]
+  securitySettings    SecuritySetting[]
 
   @@map("accounts")
 }
@@ -707,4 +708,17 @@ model ChildPhoto {
 
   @@id([accountId, childId])
   @@map("child_photos")
+}
+
+model SecuritySetting {
+  id                  Int      @id @default(1)
+  totpRequired        Boolean  @map("totp_required")
+  staffPasswordChange Boolean  @map("staff_password_change")
+  updatedById         String   @map("updated_by_id") @db.Uuid
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  version             Int      @default(1)
+
+  updatedBy Account @relation(fields: [updatedById], references: [id])
+
+  @@map("security_settings")
 }
