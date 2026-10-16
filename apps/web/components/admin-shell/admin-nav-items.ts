@@ -11,6 +11,7 @@ import {
   type LucideIcon,
   ScrollText,
   Search,
+  Settings,
   Syringe,
   UserPlus,
   Users,
@@ -55,6 +56,7 @@ export const ADMIN_NAV: readonly NavGroup[] = [
     items: [
       { href: '/admin/correcciones', label: 'Correcciones', icon: FilePenLine },
       { href: '/admin/auditoria', label: 'Auditoría', icon: ScrollText },
+      { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
     ],
   },
 ];
