@@ -15,7 +15,7 @@ describe('cuentas del personal', () => {
   let admin: SignedInAccount;
 
   beforeAll(async () => {
-    context = await createTestApp();
+    context = await createTestApp({ STAFF_PASSWORD_CHANGE: true });
     admin = await signInAs(context, 'ADMIN');
   });
 
