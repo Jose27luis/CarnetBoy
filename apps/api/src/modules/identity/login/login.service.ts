@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   type AuthTokens,
   type CurrentAccount,
@@ -10,11 +10,10 @@ import {
 } from '@carnet/contracts';
 import type { Account, Prisma } from '@prisma/client';
 import { DomainError } from '../../../common/errors/domain-error';
-import { ENV } from '../../../config/env.module';
-import type { Env } from '../../../config/env';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type { Tx } from '../../../infrastructure/prisma/transaction';
 import { AuditService } from '../../audit/audit.service';
+import { SecuritySettingsService } from '../../settings/security-settings.service';
 import { normalizeEmail } from '../credentials/email';
 import { PasswordHasher } from '../credentials/password-hasher';
 import { SessionService } from '../sessions/session.service';
@@ -41,7 +40,7 @@ function isStaff(role: Role): boolean {
 @Injectable()
 export class LoginService {
   constructor(
-    @Inject(ENV) private readonly env: Env,
+    private readonly security: SecuritySettingsService,
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordHasher,
     private readonly totp: TotpService,
@@ -181,11 +180,13 @@ export class LoginService {
   }
 
   private async nextStep(account: Account, ip: string, now: Date): Promise<LoginStep> {
-    if (account.passwordChangeRequired && (this.env.STAFF_PASSWORD_CHANGE || !isStaff(account.role))) {
+    const security = await this.security.current();
+
+    if (account.passwordChangeRequired && (security.staffPasswordChange || !isStaff(account.role))) {
       return { step: 'PASSWORD_CHANGE_REQUIRED', ...this.challenges.issue(account.id, 'PASSWORD_CHANGE', now) };
     }
 
-    if (this.env.TOTP_REQUIRED && isStaff(account.role)) {
+    if (security.totpRequired && isStaff(account.role)) {
       return account.totpEnabledAt === null
         ? { step: 'TOTP_ENROLLMENT_REQUIRED', ...this.challenges.issue(account.id, 'TOTP_ENROLLMENT', now) }
         : { step: 'TOTP_REQUIRED', ...this.challenges.issue(account.id, 'TOTP', now) };
