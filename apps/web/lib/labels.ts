@@ -87,6 +87,7 @@ const AUDIT_ACTION_LABEL: Record<string, string> = {
   'account.suspended': 'suspendió una cuenta',
   'account.updated': 'editó los datos de una cuenta',
   'account.password_set': 'definió la contraseña de una cuenta',
+  'settings.security_updated': 'cambió la configuración de seguridad',
   'account.reactivated': 'reactivó una cuenta',
   'facility.created': 'registró un establecimiento',
   'facility.updated': 'modificó un establecimiento',
