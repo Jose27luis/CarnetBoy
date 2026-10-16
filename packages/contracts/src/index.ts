@@ -9,3 +9,4 @@ export * from './schedule';
 export * from './guardian';
 export * from './notifications';
 export * from './reports';
+export * from './settings';
