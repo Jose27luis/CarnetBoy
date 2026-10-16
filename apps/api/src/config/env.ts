@@ -28,6 +28,10 @@ const envSchema = z
       .enum(['true', 'false'], { message: 'Usa true o false' })
       .default('true')
       .transform((value) => value === 'true'),
+    STAFF_PASSWORD_CHANGE: z
+      .enum(['true', 'false'], { message: 'Usa true o false' })
+      .default('true')
+      .transform((value) => value === 'true'),
     BOOTSTRAP_ADMIN_EMAIL: optionalText.pipe(z.email().optional()),
     BOOTSTRAP_ADMIN_PASSWORD: optionalText.pipe(
       z.string().min(BOOTSTRAP_PASSWORD_MIN_LENGTH, `Debe tener al menos ${BOOTSTRAP_PASSWORD_MIN_LENGTH} caracteres`).optional(),
