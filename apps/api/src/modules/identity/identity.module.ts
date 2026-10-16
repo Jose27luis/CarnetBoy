@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
+import { SettingsModule } from '../settings/settings.module';
 import { AdminBootstrapService } from './accounts/admin-bootstrap.service';
 import { GuardianAccountsService } from './accounts/guardian-accounts.service';
 import { StaffAccountsService } from './accounts/staff-accounts.service';
@@ -13,7 +14,7 @@ import { StaffAccountsController } from './staff-accounts.controller';
 import { TotpService } from './totp/totp.service';
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, SettingsModule],
   controllers: [AuthController, StaffAccountsController, OwnAccountController],
   providers: [
     PasswordHasher,
