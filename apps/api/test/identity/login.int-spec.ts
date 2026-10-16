@@ -15,7 +15,7 @@ describe('ingreso', () => {
   let context: TestContext;
 
   beforeAll(async () => {
-    context = await createTestApp({ TOTP_REQUIRED: true });
+    context = await createTestApp({ TOTP_REQUIRED: true, STAFF_PASSWORD_CHANGE: true });
   });
 
   afterAll(async () => {
@@ -150,7 +150,7 @@ describe('ingreso con el segundo factor desactivado', () => {
   let context: TestContext;
 
   beforeAll(async () => {
-    context = await createTestApp({ TOTP_REQUIRED: false });
+    context = await createTestApp({ TOTP_REQUIRED: false, STAFF_PASSWORD_CHANGE: false });
   });
 
   afterAll(async () => {
@@ -161,6 +161,14 @@ describe('ingreso con el segundo factor desactivado', () => {
     const admin = await createAccount(context, 'ADMIN', { totpEnrolled: false });
 
     const response = await login(context, admin.identifier);
+
+    expect(response.json<LoginStep>().step).toBe('AUTHENTICATED');
+  });
+
+  it('deja entrar al digitador con su contraseña temporal sin pasos adicionales', async () => {
+    const digitizer = await createAccount(context, 'DIGITIZER', { passwordChangeRequired: true, totpEnrolled: true });
+
+    const response = await login(context, digitizer.identifier);
 
     expect(response.json<LoginStep>().step).toBe('AUTHENTICATED');
   });
